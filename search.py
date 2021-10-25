@@ -17,14 +17,14 @@ resource = build("customsearch", "v1", developerKey=my_api_key).cse()
 # they will do their magic with the reddit links
 
 
-def return_links(searchstring):
-    result = resource.list(q=searchstring + " reddit", cx=cx_key).execute()
-    linkarray = []
+def return_links(search_string):
+    result = resource.list(q=search_string + " reddit", cx=cx_key).execute()
+    links = []
     for item in result["items"]:
         url = item[
             "link"
         ]  # link is url (e.g., https://www.reddit.com/r/fountainpens/comments/13isgr/guide_to_getting_your_first_fountain_pen)
         domain = item["displayLink"]  # displayLink is domain (e.g., www.reddit.com)
         if domain.endswith("reddit.com") and "comments" in url:
-            linkarray.append(url)
-    return linkarray
+            links.append(url)
+    return links

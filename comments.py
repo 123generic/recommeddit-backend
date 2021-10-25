@@ -1,9 +1,7 @@
-import json
 import logging
 import os
 
 import praw
-import requests
 from dotenv import load_dotenv
 from functional import seq
 
@@ -76,21 +74,17 @@ def comment_to_dict(comment):
 #     return comments
 
 
-def get_comments(url: str) -> list:
-    """
-    Get all comments from a particular URL.
-    Currently added by BFS order.
-    :param url:
-    """
+async def get_comments(session, url):
     i = url.find("/comments/") + len("/comments/")
     submission_id = url[i:i + ID_LENGTH]
     pushshift_url = f"https://api.pushshift.io/reddit/comment/search/?link_id={submission_id}&limit=1000"
-    submission = requests.get(pushshift_url)
-    submission_results = json.loads(submission.content)['data']
 
-    comments = seq(submission_results).map(comment_to_dict)
+    async with session.get(pushshift_url) as resp:
+        res = await resp.json()
+        submission_results = res['data']
+        comments = seq(submission_results).map(comment_to_dict)
 
-    return comments
+        return comments
 
 
 def post_to_dict(post):

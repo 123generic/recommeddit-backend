@@ -142,12 +142,6 @@ def movie_extractor_chunked(chunked_comments):
     data = seq(chunked_comments).map(lambda chunk: str(chunk)).to_list()
     results = ml.extractors.extract(model_id, data).body
 
-    # for i, chunked_result in enumerate(results):
-    #     for extraction in chunked_result["extractions"]:
-
-    # for chunked_comment, result in zip(chunked_comments, results):
-    #     chunked_comment["extractions"] = result["extractions"]
-
     recommendations = defaultdict(int)
 
     for chunked_result in results:
@@ -172,10 +166,3 @@ def movie_extractor_chunked(chunked_comments):
             results.append(entry)
 
     return results
-
-# print(keyword_extractor(['This error is caused because we try to convert “7.4: to an integer.']))
-# test = [
-#     "Elon Musk has shared a photo of the spacesuit designed by SpaceX. This is the second image shared of the new design and the first to feature the spacesuit",
-#     "I use Kaleidoscope\n\nhttp://www.kaleidoscopeapp.com/\n\nThis is a file comparison tool which is excellent at helping you merge and can serve many other purposes. Not an all-in-one git client like some of the other replies",
-# ]
-# print(keyword_extractor_total(test))

@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import asyncio
+
 import recommendations
 
 
@@ -12,18 +14,19 @@ def search(request):
 
     return results, 200, {'Access-Control-Allow-Origin': '*'}
 
-# def main():
-#     # assume first argument is query. Default query is 'C++ IDE'
-#     try:
-#         import sys
-#         query = sys.argv[1]
-#     except IndexError:
-#         query = "similar movies to inception"
-#
-#     results = recommendations.get_recommendations(query)
-#
-#     print(results)
-#
-#
-# if __name__ == "__main__":
-#     main()
+
+def main():
+    # assume first argument is query. Default query is 'C++ IDE'
+    try:
+        import sys
+        query = sys.argv[1]
+    except IndexError:
+        query = "similar movies to inception"
+
+    results = asyncio.run(recommendations.get_recommendations(query))
+
+    print(results)
+
+
+if __name__ == "__main__":
+    main()

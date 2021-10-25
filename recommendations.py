@@ -1,13 +1,15 @@
+import asyncio
 import html
 
+import aiohttp
 from functional import seq
 from unidecode import unidecode
 
 import MonkeyLearnProductSentiment
-import comments
 import markdown_to_plaintext
 import search
 from comment import Comment, CommentList
+from comments import get_comments
 
 
 def clean_comment(comment):
@@ -15,7 +17,7 @@ def clean_comment(comment):
     return comment
 
 
-def get_recommendations(query):
+async def get_recommendations(query):
     if not query:
         return {"error_message": "No query", "success": False, "recommendations": []}
 
@@ -34,9 +36,14 @@ def get_recommendations(query):
     #         .to_list()
     # ).chunk()
 
+    async with aiohttp.ClientSession() as session:
+        comments = await asyncio.gather(*seq(reddit_urls)
+                                        .map(lambda url: get_comments(session, url))
+                                        .map(asyncio.ensure_future))
+
     chunked_comments = CommentList(
-        seq(reddit_urls)
-            .flat_map(lambda reddit_url: comments.get_comments(reddit_url))
+        seq(comments)
+            .flatten()
             .map(clean_comment)
             .map(Comment.from_dict)
             .to_list()
