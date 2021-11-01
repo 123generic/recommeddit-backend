@@ -1,7 +1,6 @@
 import asyncio
 import html
 
-import aiohttp
 from functional import seq
 from unidecode import unidecode
 
@@ -36,10 +35,9 @@ async def get_recommendations(query):
     #         .to_list()
     # ).chunk()
 
-    async with aiohttp.ClientSession() as session:
-        comments = await asyncio.gather(*seq(reddit_urls)
-                                        .map(lambda url: get_comments(session, url))
-                                        .map(asyncio.ensure_future))
+    comments = await asyncio.gather(*seq(reddit_urls)
+                                    .map(lambda url: get_comments(session, url))
+                                    .map(asyncio.ensure_future))
 
     chunked_comments = CommentList(
         seq(comments)
