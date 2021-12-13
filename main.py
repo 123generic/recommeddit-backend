@@ -44,11 +44,11 @@ def main():
     except IndexError:
         query = "Best C++ IDE"
 
-    #results = asyncio.run(recommendations.get_recommendations(query))
-    results = auto_suggest(query)
+    results = asyncio.run(recommendations.get_recommendations(query))
+    suggestions = auto_suggest(query)
 
     print(results)
-
+    print(suggestions)
 
 if __name__ == "__main__":
     main()
