@@ -1,8 +1,9 @@
 #!/usr/bin/python
-import requests
-import sys
 import json
-import asyncio
+import sys
+
+import requests
+
 import recommendations
 
 
@@ -15,10 +16,11 @@ def auto_suggest(request):
     '''
     query = request
 
-    cursorPoint = len(query)+1
+    cursorPoint = len(query) + 1
     newQuery = "%20".join(query.split())
 
-    url = "https://www.google.com/complete/search?q={}%20reddit&cp={}&client=gws-wiz&xssi=t&hl=en&authuser=0&dpr=2".format(newQuery, cursorPoint)
+    url = "https://www.google.com/complete/search?q={}%20reddit&cp={}&client=gws-wiz&xssi=t&hl=en&authuser=0&dpr=2".format(
+        newQuery, cursorPoint)
 
     res = requests.get(url).text[5:]
     parsed = json.loads(res)[0]
@@ -26,6 +28,7 @@ def auto_suggest(request):
     newResult = [element[0].replace("reddit", "") for element in parsed]
 
     return newResult, 200, {'Access-Control-Allow-Origin': '*'}
+
 
 def search(request):
     if request.args and 'query' in request.args:
@@ -44,10 +47,8 @@ def main():
     except IndexError:
         query = "Best C++ IDE"
 
-    results = asyncio.run(recommendations.get_recommendations(query))
     suggestions = auto_suggest(query)
 
-    print(results)
     print(suggestions)
 
 if __name__ == "__main__":
