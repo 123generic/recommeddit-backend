@@ -326,4 +326,4 @@ $RECYCLE.BIN/
 adventofcode/
 
 # API Keys
-database.ini
+project.ini
