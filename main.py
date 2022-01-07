@@ -24,7 +24,7 @@ def auto_suggest(request):
 
     newResult = [element[0].replace("reddit", "") for element in parsed]
 
-    return newResult, 200, {'Access-Control-Allow-Origin': '*'}
+    return {"suggest": newResult}, 200, {'Access-Control-Allow-Origin': '*'}
 
 
 def search(request):
