@@ -19,8 +19,8 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: 'projects/242908451593/locations/global/workloadIdentityPools/example-pool/providers/example-gh-provider'
-          service_account: 'test-storage-sa@recommeddit.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/242908451593/locations/global/workloadIdentityPools/gh-actions-backend-pool/providers/gh-provider'
+          service_account: 'cloud-functions-sa@recommeddit.iam.gserviceaccount.com'
 
       - id: 'deploy-search'
         uses: 'google-github-actions/deploy-cloud-functions@v0'
