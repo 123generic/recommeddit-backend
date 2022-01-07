@@ -1,4 +1,3 @@
-import asyncio
 import html
 
 from functional import seq
@@ -35,9 +34,11 @@ async def get_recommendations(query):
     #         .to_list()
     # ).chunk()
 
-    comments = await asyncio.gather(*seq(reddit_urls)
-                                    .map(lambda url: get_comments(session, url))
-                                    .map(asyncio.ensure_future))
+    comments = (seq(reddit_urls)
+                .flat_map(get_comments)
+                .map(clean_comment)
+                .map(Comment.from_dict)
+                .to_list())
 
     chunked_comments = CommentList(
         seq(comments)
