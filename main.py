@@ -7,13 +7,10 @@ import recommendations
 
 
 def auto_suggest(request):
-    '''
     if request.args and 'query' in request.args:
         query = request.args.get('query')
     else:
-        query = ""
-    '''
-    query = request
+        query = "best youtube"
 
     cursorPoint = len(query)+1
     newQuery = "%20".join(query.split())
@@ -34,7 +31,7 @@ def search(request):
         query = ""
     results = recommendations.get_recommendations(query)
 
-    return results, 200, {'Access-Control-Allow-Origin': '*'}
+    return {"suggest": results}, 200, {'Access-Control-Allow-Origin': '*'}
 
 
 def main():
