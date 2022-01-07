@@ -1,4 +1,4 @@
-name: Send submodule updates to parent repo
+name: Deploy to Google Cloud Functions on push to main
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  job_id:
+  deploy:
     runs-on: ubuntu-latest
 
     permissions:
@@ -19,15 +19,17 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-          service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/242908451593/locations/global/workloadIdentityPools/example-pool/providers/example-gh-provider'
+          service_account: 'test-storage-sa@recommeddit.iam.gserviceaccount.com'
 
-      - id: deploy
-        uses: google-github-actions/deploy-cloud-functions@v0.7.0
+      - id: 'deploy-search'
+        uses: 'google-github-actions/deploy-cloud-functions@v0'
         with:
-          name: my-function
-          runtime: nodejs10
+          name: 'search'
+          runtime: 'python39'
 
-      # Example of using the output
-      - id: test
-        run: curl "${{ steps.deploy.outputs.url }}"
+      - id: 'deploy-autocomplete'
+        uses: 'google-github-actions/deploy-cloud-functions@v0'
+        with:
+          name: 'auto_suggest'
+          runtime: 'python39'
