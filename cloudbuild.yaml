@@ -1,7 +1,7 @@
 steps:
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: [ 'functions', 'deploy', 'auto_suggest', '--trigger-http', '--runtime', 'python39', '--entry-point', 'auto_suggest' ]
+    args: [ 'functions', 'deploy', 'auto_suggest', '--trigger-http', '--runtime', 'python39', '--entry-point', 'auto_suggest', '--allow-unauthenticated' ]
     dir: '.'
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: [ 'functions', 'deploy', 'search', '--trigger-http', '--runtime', 'python39', '--entry-point', 'search' ]
+    args: [ 'functions', 'deploy', 'search', '--trigger-http', '--runtime', 'python39', '--entry-point', 'search', '--allow-unauthenticated' ]
     dir: '.'
