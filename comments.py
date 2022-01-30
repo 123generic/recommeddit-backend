@@ -1,21 +1,8 @@
 import concurrent.futures
 import html
-import os
 import re
 
 import requests
-from dotenv import load_dotenv
-from pmaw import PushshiftAPI
-
-load_dotenv(".env")
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-REDIRECT_URI = os.getenv("REDIRECT_URI")
-USER_AGENT = os.getenv("USER_AGENT")
-
-api = PushshiftAPI()
-
-ID_LENGTH = 6
 
 """
 Uses regex to parse comments from requests object
