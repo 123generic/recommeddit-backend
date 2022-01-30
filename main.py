@@ -34,7 +34,7 @@ def search(request):
         query = ""
     results = recommendations.get_recommendations(query)
 
-    return {"suggest": results}, 200, {'Access-Control-Allow-Origin': '*'}
+    return results, 200, {'Access-Control-Allow-Origin': '*'}
 
 
 def main():
@@ -44,9 +44,10 @@ def main():
     except IndexError:
         query = "Best C++ IDE"
 
-    suggestions = auto_suggest(query)
+    results = recommendations.get_recommendations(query)
 
-    print(suggestions)
+    print(results)
+
 
 if __name__ == "__main__":
     main()

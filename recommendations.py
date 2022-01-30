@@ -15,7 +15,7 @@ def clean_comment(comment):
     return comment
 
 
-async def get_recommendations(query):
+def get_recommendations(query):
     if not query:
         return {"error_message": "No query", "success": False, "recommendations": []}
 
@@ -34,15 +34,8 @@ async def get_recommendations(query):
     #         .to_list()
     # ).chunk()
 
-    comments = (seq(reddit_urls)
-                .flat_map(get_comments)
-                .map(clean_comment)
-                .map(Comment.from_dict)
-                .to_list())
-
     chunked_comments = CommentList(
-        seq(comments)
-            .flatten()
+        seq(get_comments(reddit_urls))
             .map(clean_comment)
             .map(Comment.from_dict)
             .to_list()
