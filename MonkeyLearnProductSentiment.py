@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 from functional import seq
 from monkeylearn import MonkeyLearn
 
+import cross_reference
+import dedupe
+
 load_dotenv(".env")
 api_key = os.getenv("URL_SCRAPE_API_KEY")
 ################################################################
@@ -107,7 +110,7 @@ def keyword_extractor_total(comments):
     return results
 
 
-def keyword_extractor_chunked(chunked_comments):
+def keyword_extractor_chunked(chunked_comments, query):
     model_id = "ex_YCya9nrn"
     data = seq(chunked_comments).map(lambda chunk: str(chunk)).to_list()
     results = ml.extractors.extract(model_id, data).body
@@ -124,43 +127,55 @@ def keyword_extractor_chunked(chunked_comments):
         for keyword in chunked_result["extractions"]:
             recommendations[keyword["parsed_value"]] += float(keyword["relevance"]) * keyword["count"]
 
-    results = seq(dict(
+    results = dict(
         sorted(
             recommendations.items(),
             key=lambda item: item[1],
             reverse=True
         )
-    ).items()).filter(cross_reference_imdb)
+    ).items()
 
-    return results
+    deduped = dedupe.dedupe(seq(results).map(lambda result: result[0]).to_list())
+    deduped_results = seq(results).filter(lambda result: result[0] in deduped)
+
+    num_results = 0
+    category = query.split(' ', 1)[1]
+    cross_referenced_results = []
+    for iters, result in enumerate(deduped_results):
+        if num_results >= 15 or (iters >= 20 and num_results >= 10) or \
+                (iters >= 30 and num_results >= 5) or iters >= 40:
+            break
+        if cross_reference.with_serp(f"{result[0]} {category}")[0]:
+            cross_referenced_results.append(result)
+    return cross_referenced_results
 
 
 def movie_extractor_chunked(chunked_comments):
     model_id = "ex_8vwmUB7s"
-    data = seq(chunked_comments).map(lambda chunk: str(chunk)).to_list()
-    results = ml.extractors.extract(model_id, data).body
-
-    recommendations = defaultdict(int)
-
-    for chunked_result in results:
-        for keyword in chunked_result["extractions"]:
-            recommendations[keyword["parsed_value"]] += 1
-
-    unfiltered_results = dict(
-        sorted(
-            recommendations.items(),
-            key=lambda item: item[1],
-            reverse=True
-        )
-    )
-
-    count = 0
-    results = []
-    for entry in unfiltered_results.items():
-        if count == 10:
-            break
-        if cross_reference_imdb(entry):
-            count += 1
-            results.append(entry)
-
-    return results
+    # data = seq(chunked_comments).map(lambda chunk: str(chunk)).to_list()
+    # results = ml.extractors.extract(model_id, data).body
+    #
+    # recommendations = defaultdict(int)
+    #
+    # for chunked_result in results:
+    #     for keyword in chunked_result["extractions"]:
+    #         recommendations[keyword["parsed_value"]] += 1
+    #
+    # unfiltered_results = dict(
+    #     sorted(
+    #         recommendations.items(),
+    #         key=lambda item: item[1],
+    #         reverse=True
+    #     )
+    # )
+    #
+    # count = 0
+    # results = []
+    # for entry in unfiltered_results.items():
+    #     if count == 10:
+    #         break
+    #     if cross_reference_imdb(entry):
+    #         count += 1
+    #         results.append(entry)
+    #
+    # return results

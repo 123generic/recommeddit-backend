@@ -41,7 +41,7 @@ def get_recommendations(query):
             .to_list()
     ).chunk()
 
-    results = MonkeyLearnProductSentiment.movie_extractor_chunked(chunked_comments)
+    results = MonkeyLearnProductSentiment.keyword_extractor_chunked(chunked_comments, query)
     recommendations = seq(results).smap(lambda text, score: {"keyword": text, "score": score}).to_list()
 
     return {"error_message": "", "success": True, "recommendations": recommendations}

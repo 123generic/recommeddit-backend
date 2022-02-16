@@ -1,12 +1,16 @@
 from __future__ import print_function
 
 import json
+import os
 import re
 import urllib
 
+from dotenv import load_dotenv
 from serpapi import GoogleSearch
 
-from config import config
+load_dotenv(".env")
+serp_api_key = os.getenv("SERPAPI_API_KEY")
+google_knowledge_graph_api_key = os.getenv("GOOGLE_KG_API_KEY")
 
 
 def with_serp(query_string):
@@ -21,19 +25,14 @@ def with_serp(query_string):
                                          False if not
     WARNING: limited queries (100 - 10000)
     """
-    configuration = config()  # pulls data from project.ini file
-
-    if "apikey" not in configuration.keys():
-        raise KeyError("Please provide an apikey in an initialization file. Contact Anmol for more info.")
-
     params = {
         "q": query_string.lower(),
-        "api_key": configuration["apikey"]
+        "api_key": serp_api_key
     }
 
     search = GoogleSearch(params)  # complete Google search with params
 
-    del configuration, params  # delete the configuration dictionaries that hold the api key
+    del params  # delete the configuration dictionaries that hold the api key
 
     results = search.get_dict()
     return process_results(query_string, results)  # check if results are good
@@ -57,13 +56,13 @@ def process_results(query_string, results):
     for web_result in results['organic_results']:
         count = 0
         for word in words:
-            if word in ' '.join(web_result['about_this_result']['keywords']).lower() or word in web_result[
-                'title'].lower() or word in web_result['snippet'].lower():
+            if word in ' '.join(web_result['about_this_result']['keywords']).lower() or \
+                    word in web_result['title'].lower() or word in web_result['snippet'].lower():
                 count += 1
         if count == len(words):
             print(web_result['link'])
-            return (True, web_result['link'])
-    return (False, None)
+            return True, web_result['link']
+    return False, None
 
 
 def clean_string(s):
@@ -88,16 +87,11 @@ def gkg_query(query_string, threshold=1, print_results=False):
                     many words in their detailed description from the query string,
                     default = 1 -- only one missing word will be tolerated
     """
-    configuration = config(section='kgsearch')  # get config data from project.ini
-
-    if "api_key" not in configuration.keys():
-        raise KeyError("Please provide an apikey in an initialization file. Contact Anmol for more info.")
-
     params = {
         'query': query_string,
         'limit': 10,
         'indent': True,
-        'key': configuration['api_key']
+        'key': google_knowledge_graph_api_key
     }
 
     # query KG
@@ -125,8 +119,8 @@ def gkg_query(query_string, threshold=1, print_results=False):
             if print_results:
                 print(f"Query of `{query_string}` found TRUE by the following search result:\n")
                 print(result)
-            return (True,)
-    return (False, None)
+            return True,
+    return False, None
 
 
 if __name__ == '__main__':
