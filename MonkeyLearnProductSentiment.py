@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 from functional import seq
 from monkeylearn import MonkeyLearn
 
-from imdb_query import cross_reference_imdb
-
 load_dotenv(".env")
 api_key = os.getenv("URL_SCRAPE_API_KEY")
 ################################################################
