@@ -56,7 +56,7 @@ class CommentList:
         if next_chunk_start_index is None:
             return [ChunkedComment(self.comments)]
         next_chunk = CommentList(self.comments[next_chunk_start_index:])
-        return [ChunkedComment(self.comments[0:next_chunk_start_index])] + next_chunk.chunk()
+        return [ChunkedComment(self.comments[:next_chunk_start_index])] + next_chunk.chunk()
 
     def add_extraction(self, extraction):
         offset_start, offset_end = extraction.bounds
@@ -76,7 +76,7 @@ class CommentList:
                 offset = 0
             else:
                 offset = self.bounds_list[i - 1].end + 2  # we add 2 because there is "\n\n" between comments
-            self.bounds_list[i] = Bounds(offset, offset + len(str(self.comments[i])))
+            self.bounds_list[i] = Bounds(offset, offset + len(str(comment)))
 
 
 class ChunkedComment(CommentList):
