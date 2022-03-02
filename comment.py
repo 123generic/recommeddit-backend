@@ -10,8 +10,8 @@ class Extraction:
 
     @classmethod
     def from_dict(cls, d, offset=0):
-        start, end = d['offset_span']
-        return cls(d['extracted_text'], Bounds(start + offset, end + offset))
+        start, end = [bound + offset for bound in d['offset_span']]
+        return cls(d['extracted_text'], Bounds(start, end))
 
 
 class ExtractionList:
