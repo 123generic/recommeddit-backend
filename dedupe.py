@@ -28,7 +28,7 @@ __sources__ = ['wikipedia']
 
 
 def top_wiki(query, n=3):
-    '''
+    """
     Return the top n results when searching for possible normalized versions of
     the query using the Wikipedia API
     Input:
@@ -36,7 +36,7 @@ def top_wiki(query, n=3):
         - n : the maximum number of possible normalized strings you want
     Output:
         - array, length n, contains only the title of the wikipedia article
-    '''
+    """
     params['srlimit'] = n
     params['srsearch'] = query
     results = \
