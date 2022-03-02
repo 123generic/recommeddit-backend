@@ -3,27 +3,30 @@ from collections import namedtuple
 Bounds = namedtuple('Bounds', "start end")
 
 
-#
-# class Keyword:
-#     def __init__(self, text, bounds_list):
-#         self.bounds_list = bounds_list
-#         self.comments =
-#         self.set_bounds()
-#
-#     @classmethod
-#     def from_extraction(cls, extraction):
-#         return cls(dict["text"], dict["score"], dict["url"])
-#
-#     def set_bounds(self):
-#         for i, comment in enumerate(self.comments):
-#             if i == 0:
-#                 offset = 0
-#             else:
-#                 offset = self.bounds_list[i - 1].end + 2  # we add 2 because there is "\n\n" between comments
-#             self.bounds_list[i] = Bounds(offset, offset + len(str(self.comments[i])))
-#
-#     def __str__(self):
-#         return self.text
+class Extraction:
+    def __init__(self, text, bounds):
+        self.text = text
+        self.bounds = bounds
+
+    @classmethod
+    def from_dict(cls, d, offset=0):
+        start, end = d['offset_span']
+        return cls(d['extracted_text'], Bounds(start + offset, end + offset))
+
+
+class ExtractionList:
+    def __init__(self, extractions):
+        self.extractions = extractions
+
+    @classmethod
+    def from_chunked_results(cls, chunked_results):
+        extractions = []
+        prev_len = 0
+        for chunked_result in chunked_results:
+            for extraction in chunked_result['extractions']:
+                extractions.append(Extraction.from_dict(extraction, offset=prev_len))
+            prev_len += len(chunked_result['text']) + 2  # we add 2 because there is "\n\n" between comments
+        return cls(extractions)
 
 
 class Comment:
@@ -31,10 +34,11 @@ class Comment:
         self.text = text
         self.score = score
         self.url = url
+        self.extractions = []
 
     @classmethod
-    def from_dict(cls, dict):
-        return cls(dict["text"], dict["score"], dict["url"])
+    def from_dict(cls, d):
+        return cls(d["text"], d["score"], d["url"])
 
     def __str__(self):
         return self.text
@@ -53,6 +57,15 @@ class CommentList:
             return [ChunkedComment(self.comments)]
         next_chunk = CommentList(self.comments[next_chunk_start_index:])
         return [ChunkedComment(self.comments[0:next_chunk_start_index])] + next_chunk.chunk()
+
+    def add_extraction(self, extraction):
+        offset_start, offset_end = extraction.bounds
+        for i, bounds in enumerate(self.bounds_list):
+            if bounds.start <= offset_start < bounds.end:
+                start = offset_start - bounds.start
+                end = offset_end - bounds.start
+                self.comments[i].extractions.append(Extraction(extraction.text, Bounds(start, end)))
+                return
 
     def to_list(self):
         return self.comments

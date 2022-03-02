@@ -7,8 +7,11 @@ from dotenv import load_dotenv
 from functional import seq
 from monkeylearn import MonkeyLearn
 
+import comment_sentiment
 import cross_reference
 import dedupe
+import util
+from comment import ExtractionList
 
 load_dotenv(".env")
 api_key = os.getenv("URL_SCRAPE_API_KEY")
@@ -113,7 +116,7 @@ def keyword_extractor_total(comments):
 
 def keyword_extractor_chunked(chunked_comments, query):
     model_id = "ex_YCya9nrn"
-    data = seq(chunked_comments).map(lambda chunk: str(chunk)).to_list()
+    data = seq(chunked_comments.chunk()).map(str).to_list()
     results = ml.extractors.extract(model_id, data).body
 
     # for i, chunked_result in enumerate(results):
@@ -140,6 +143,65 @@ def keyword_extractor_chunked(chunked_comments, query):
     deduped_results = seq(results).filter(lambda result: result[0] in deduped)
 
     timeout = 20 * 1000
+    start = time.time()
+    wiki_results = set()
+    wiki_deduped_results = []
+    for result in deduped_results:
+        if time.time() - start > timeout:
+            break
+        wiki_result = dedupe.top_wiki(result[0], query)
+        if wiki_result:
+            wiki_result = wiki_result[0]
+        if wiki_result not in wiki_results:
+            wiki_results.add(wiki_result)
+            wiki_deduped_results.append(result)
+
+    num_results = 0
+    category = query.split(' ', 1)[1]
+    cross_referenced_results = []
+    for iters, result in enumerate(wiki_deduped_results):
+        if num_results >= 15 or (iters >= 20 and num_results >= 10) or \
+                (iters >= 30 and num_results >= 5) or iters >= 40:
+            break
+        if cross_reference.with_serp(f"{result[0]} {category}")[0]:
+            cross_referenced_results.append(result)
+    return cross_referenced_results
+
+
+def recommendation_extractor_chunked(comment_list, query):
+    model_id = "ex_LS5yxu8k"
+    data = seq(comment_list.chunk()).map(str).to_list()
+    results = ml.extractors.extract(model_id, data).body
+
+    extractions = ExtractionList.from_chunked_results(results)
+
+    for extraction in extractions:
+        comment_list.add_extraction(extraction)
+
+    recommendations = defaultdict(float)
+
+    for comment in comment_list.comments:
+        comment_recommendations = comment_sentiment \
+            .get_comment_sentiment(comment.text,
+                                   seq(comment.extractions)
+                                   .map(lambda extraction: extraction.text)
+                                   .to_list(),
+                                   comment.score)
+        for recommendation, score in util.chunks(comment_recommendations, 2):
+            recommendations[recommendation] += score
+
+    results = dict(
+        sorted(
+            recommendations.items(),
+            key=lambda item: item[1],
+            reverse=True
+        )
+    ).items()
+
+    deduped = dedupe.dedupe(seq(results).map(lambda result: result[0]).to_list())
+    deduped_results = seq(results).filter(lambda result: result[0] in deduped)
+
+    timeout = 20 * 1000  # 20 seconds
     start = time.time()
     wiki_results = set()
     wiki_deduped_results = []

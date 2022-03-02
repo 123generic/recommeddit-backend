@@ -34,14 +34,14 @@ def get_recommendations(query):
     #         .to_list()
     # ).chunk()
 
-    chunked_comments = CommentList(
+    comment_list = CommentList(
         seq(get_comments(reddit_urls))
             .map(clean_comment)
             .map(Comment.from_dict)
             .to_list()
-    ).chunk()
+    )
 
-    results = MonkeyLearnProductSentiment.keyword_extractor_chunked(chunked_comments, query)
+    results = MonkeyLearnProductSentiment.recommendation_extractor_chunked(comment_list, query)
     recommendations = seq(results).smap(lambda text, score: {"keyword": text, "score": score}).to_list()
 
     return {"error_message": "", "success": True, "recommendations": recommendations}
