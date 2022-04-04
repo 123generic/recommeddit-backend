@@ -175,7 +175,7 @@ def recommendation_extractor_chunked(comment_list, query):
 
     extractions = ExtractionList.from_chunked_results(results)
 
-    for extraction in extractions:
+    for extraction in extractions.extractions:
         comment_list.add_extraction(extraction)
 
     recommendations = defaultdict(float)
@@ -186,7 +186,7 @@ def recommendation_extractor_chunked(comment_list, query):
                         .map(lambda extraction: extraction.text)
                         .to_list(),
                         comment.text,
-                        comment.score)
+                        int(comment.score))
         for recommendation, score in util.chunks(comment_recommendations, 2):
             recommendations[recommendation] += score
 
