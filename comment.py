@@ -1,92 +1,61 @@
-from collections import namedtuple
+"""
+Title: comment.py
+Author: Mehir Arora
+Date: April 4th, 2022
+Description: Two helper classes to represent Reddit Threads and Comments respectively.
+"""
 
-Bounds = namedtuple('Bounds', "start end")
-
-
-class Extraction:
-    def __init__(self, text, bounds):
-        self.text = text
-        self.bounds = bounds
-
-    @classmethod
-    def from_dict(cls, d, offset=0):
-        start, end = [bound + offset for bound in d['offset_span']]
-        return cls(d['extracted_text'], Bounds(start, end))
-
-
-class ExtractionList:
-    def __init__(self, extractions):
-        self.extractions = extractions
-
-    @classmethod
-    def from_chunked_results(cls, chunked_results):
-        extractions = []
-        prev_len = 0
-        for chunked_result in chunked_results:
-            for extraction in chunked_result['extractions']:
-                extractions.append(Extraction.from_dict(extraction, offset=prev_len))
-            prev_len += len(chunked_result['text']) + 2  # we add 2 because there is "\n\n" between comments
-        return cls(extractions)
+class Thread:
+    """
+    A class to hold thread information. Contains a pointer to array of
+    top level comments.
+    """
+    def __init__(self, **kwargs):
+        self.comments = []  # top level only
+        self.all_comments = []  # all comments, unordered
+        self.subreddit = kwargs['subreddit']
+        self.selftext = kwargs['selftext']
+        self.title = kwargs['title']
+        self.downs = kwargs['downs']
+        self.ups = kwargs['ups']
+        self.score = kwargs['score']
+        self.upvote_ratio = kwargs['upvote_ratio']
+        self.author = kwargs['author']
+        self.author_fullname = kwargs['author_fullname']
+        self.subreddit_name_prefixed = kwargs['subreddit_name_prefixed']
+        self.over_18 = kwargs['over_18']
+        self.url = kwargs['url']
+        self.permalink = kwargs['permalink']
+        self.id = kwargs['id']
+        self.num_comments = kwargs['num_comments']
+    
+    def __repr__(self):
+        return f'({self.title[:30]}...,{self.author},{self.score},{self.url},{self.permalink})'
 
 
 class Comment:
-    def __init__(self, text, score, url):
-        self.text = text
-        self.score = score
-        self.url = url
-        self.extractions = []
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(d["text"], d["score"], d["url"])
-
-    def __str__(self):
-        return self.text
-
-
-class CommentList:
-    def __init__(self, comments):
-        self.bounds_list = [Bounds(0, 0)] * len(comments)
-        self.comments = comments
-        self.set_bounds()
-
-    def chunk(self, limit=42000):
-        next_chunk_start_index = next((i for i, bounds in enumerate(self.bounds_list) if bounds.end >= limit),
-                                      None)
-        if next_chunk_start_index is None:
-            return [ChunkedComment(self.comments)]
-        next_chunk = CommentList(self.comments[next_chunk_start_index:])
-        return [ChunkedComment(self.comments[:next_chunk_start_index])] + next_chunk.chunk()
-
-    def add_extraction(self, extraction):
-        offset_start, offset_end = extraction.bounds
-        for i, bounds in enumerate(self.bounds_list):
-            if bounds.start <= offset_start < bounds.end:
-                start = offset_start - bounds.start
-                end = offset_end - bounds.start
-                self.comments[i].extractions.append(Extraction(extraction.text, Bounds(start, end)))
-                return
-
-    def to_list(self):
-        return self.comments
-
-    def set_bounds(self):
-        for i, comment in enumerate(self.comments):
-            if i == 0:
-                offset = 0
-            else:
-                offset = self.bounds_list[i - 1].end + 2  # we add 2 because there is "\n\n" between comments
-            self.bounds_list[i] = Bounds(offset, offset + len(str(comment)))
-
-
-class ChunkedComment(CommentList):
-    def __init__(self, comments):
-        super().__init__(comments)
-
-    def __str__(self):
-        text = ""
-        for comment in self.comments[:-1]:
-            text += str(comment) + "\n\n"
-        text += str(self.comments[-1])
-
-        return text
+    """
+    A class to hold information about a given comment. Contains pointers
+    to parent thread, parent comment, and an array of child comments.
+    """
+    def __init__(self, **kwargs):
+        self.parent_thread = None  # common to every element of tree
+        self.parent_comment = None  # direct parent in tree
+        self.children = []  # all direct replies
+        self.subreddit_id = kwargs['subreddit_id']
+        self.subreddit = kwargs['subreddit']
+        self.id = kwargs['id']
+        self.author = kwargs['author']
+        self.parent_id = kwargs['parent_id']
+        self.score = kwargs['score']
+        self.author_fullname = kwargs['author_fullname']
+        self.body = kwargs['body']
+        self.name = kwargs['name']
+        self.ups = kwargs['ups']
+        self.downs = kwargs['downs']
+        self.permalink = kwargs['permalink']
+        self.link_id = kwargs['link_id']
+        self.depth = kwargs['depth']
+    
+    def __repr__(self):
+        return f'({self.body[:30]}...,{self.author},{self.score},{self.parent_thread.title[:30]}...,{self.permalink})'
