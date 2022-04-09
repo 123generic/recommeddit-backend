@@ -54,10 +54,9 @@ def scrape_reddit_links_from_google_query(query, limit):
 
 def scrape_json_from_reddit_links(links):
     """
-    Returns list of reddit urls given a plain text query.
-    query: plain text query to search for
-    limit: maximum number of links to return
-    retuns: list of links
+    Returns parsed json objects from list of links
+    links: links to parse for json
+    retuns: list of parsed json ouputs
     """
     outputs = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(links)) as exec:

@@ -1,6 +1,5 @@
 import nltk
 import numpy as np
-from sentence_splitter import SentenceSplitter, split_text_into_sentences
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 analyzer = SentimentIntensityAnalyzer()
@@ -20,8 +19,7 @@ def get_sentiment_scores(comment):
 	neu_scores = []
 	neg_scores = []
 
-	sentences = split_text_into_sentences(comment, language='en')
-	for sentence in sentences:
+	for sentence in comment.sentences:
 		sentiment_dict = analyzer.polarity_scores(sentence)
 		pos = sentiment_dict['pos']
 		neu = sentiment_dict['neu']

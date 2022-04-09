@@ -1,47 +1,73 @@
-import html
+from scraper import scrape_reddit_links_from_google_query, scrape_json_from_reddit_links
+from json_parser import parse
+from clean_text import clean_text
+import spacy
+from comment import Recommendation
+from Wikidup import top_wikidata, wikidata
+from scoring import calc_points
 
-from functional import seq
-from unidecode import unidecode
-
-import MonkeyLearnProductSentiment
-import markdown_to_plaintext
-import search
-from comment import Comment, CommentList
-from comments import get_comments
-
-
-def clean_comment(comment):
-    comment["text"] = unidecode(markdown_to_plaintext.unmark(html.unescape(comment["text"])))
-    return comment
-
+# Loading spacy pipeline
+NLP = spacy.load('NER-Model')
+NLP.add_pipe('sentencizer')
 
 def get_recommendations(query):
-    if not query:
-        return {"error_message": "No query", "success": False, "recommendations": []}
+    """
+    Main entry function. Requires that query be valid in some way. Returns recommendation objects
+    query: query to search for
+    returns: list of recommendation objects
+    """
+    # Scrape google for links
+    links = scrape_reddit_links_from_google_query(query)
+    
+    # Scrape reddit and parse into dicts from links
+    jsons = scrape_json_from_reddit_links(links)
+    
+    # Parse dicts for comment objects (text cleaning done in parse method)
+    threads = []
+    all_comments = []
+    for j in jsons:
+        thread, comments = parse(j)
+        threads.append(thread)
+        all_comments.extend(comments)
 
-    # search google for "<query name> reddit"
-    reddit_urls = search.return_links(query)
+    # NER and get sentences
+    docs = NLP.pipe(x.comment for x in all_comments)
+    for comment, doc in zip(all_comments, docs):
+        comment.doc = doc
+        comment.sentences = [s.text for s in doc.sents]
+        comment.ents = [x.text for x in doc.ents]
+    
+    # Get all entities [[ent, comment], ...]
+    ents = _get_entities(all_comments)
 
-    # resolve reddit URLs to comments and remove HTML/markdown syntax
-    # comments are dictionaries of string text, number score, and string url.
-    # reddit = comments.connect()
+    # Score entities and sort
+    for lst in ents:
+        lst.append(calc_points(lst[1], lst[1].score)) # [[ent, comment, score], ...]
+    ents.sort(key=lambda x: x[2], reverse=True)
 
-    # all_comments = dump_comments.load_comments("dump_movies.dumps")
+    # From here, put in loop and wait until ten recieved
+    # De-Dupe and Consolidate (obtain wikidata ID and real name)
+    # Cross reference remaining
+    # recommendations = []
+    # while len(recommendations) < 10:
+    #     recs = de_dupe(ents[:10])
+    #     recs = cross_ref(recs)
+    #     recommendations.extend(recs)
+    #     ents = ents[10:]
+    
+    # Return in dict format
+    return ents
 
-    # chunked_comments = CommentList(
-    #     seq(all_comments)
-    #         .map(Comment.from_dict)
-    #         .to_list()
-    # ).chunk()
+def _get_entities(comments):
+    entities = []
+    for comment in comments:
+        for entity in comment.ents:
+            entities.append([entity, comment])
+    return entities
 
-    comment_list = CommentList(
-        seq(get_comments(reddit_urls))
-            .map(clean_comment)
-            .map(Comment.from_dict)
-            .to_list()
-    )
 
-    results = MonkeyLearnProductSentiment.recommendation_extractor_chunked(comment_list, query)
-    recommendations = seq(results).smap(lambda text, score: {"keyword": text, "score": score}).to_list()
+def de_dupe(entities):
+    pass
 
-    return {"error_message": "", "success": True, "recommendations": recommendations}
+def cross_ref(entities):
+    pass

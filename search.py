@@ -1,6 +1,6 @@
 import os
 
-# the hide api key bs
+# the hide api key stuff
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 

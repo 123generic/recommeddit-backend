@@ -35,10 +35,10 @@ def parse(json):
     the_thread = Thread(**kwargs)
     the_thread.comments, the_thread.all_comments = _get_comments(the_thread, json)
     
-    # Clean text of markdown and new lines
-    the_thread.title = clean_text(the_thread.title)
+    # Clean text of markdown, unicode, html, and  new lines
+    the_thread.cleaned_title = clean_text(the_thread.title)
     for comment in the_thread.all_comments:
-        comment.body = clean_text(comment.body)
+        comment.comment = clean_text(comment.body)
     return the_thread, the_thread.all_comments
 
 def _get_comments(thread, json):

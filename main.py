@@ -31,10 +31,8 @@ def search(request):
     if request.args and 'query' in request.args:
         query = request.args.get('query')
     else:
-        query = ""
-    results = recommendations.get_recommendations(query)
-
-    return results, 200, {'Access-Control-Allow-Origin': '*'}
+        return {"error_message": "No query", "success": False, "recommendations": []}
+    return recommendations.get_recommendations(query)
 
 
 def main():

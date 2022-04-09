@@ -16,6 +16,7 @@ class Thread:
         self.subreddit = kwargs['subreddit']
         self.selftext = kwargs['selftext']
         self.title = kwargs['title']
+        self.cleaned_title = None
         self.downs = kwargs['downs']
         self.ups = kwargs['ups']
         self.score = kwargs['score']
@@ -30,7 +31,7 @@ class Thread:
         self.num_comments = kwargs['num_comments']
     
     def __repr__(self):
-        return f'({self.title[:30]}...,{self.author},{self.score},{self.url},{self.permalink})'
+        return f'({self.title[:30]}...,{self.author},{self.score})'
 
 
 class Comment:
@@ -42,6 +43,10 @@ class Comment:
         self.parent_thread = None  # common to every element of tree
         self.parent_comment = None  # direct parent in tree
         self.children = []  # all direct replies
+        self.sentences = None # list of sentences for VADER scoring
+        self.sentiment_score  = None # score
+        self.doc = None
+        self.ents = []
         self.subreddit_id = kwargs['subreddit_id']
         self.subreddit = kwargs['subreddit']
         self.id = kwargs['id']
@@ -50,6 +55,7 @@ class Comment:
         self.score = kwargs['score']
         self.author_fullname = kwargs['author_fullname']
         self.body = kwargs['body']
+        self.comment = None  # cleaned comment
         self.name = kwargs['name']
         self.ups = kwargs['ups']
         self.downs = kwargs['downs']
@@ -58,4 +64,36 @@ class Comment:
         self.depth = kwargs['depth']
     
     def __repr__(self):
-        return f'({self.body[:30]}...,{self.author},{self.score},{self.parent_thread.title[:30]}...,{self.permalink})'
+        return f'({self.body[:30]}...,{self.score})'
+
+    def to_dict(self):
+        return {
+            'title':self.parent_thread.title,
+            'score':self.score,
+            'ups':self.ups,
+            'downs':self.downs,
+            'body text':self.body,
+            'permalink':'www.reddit.com' + self.permalink,
+            'author name':self.author,
+            # Add author avatar
+        }
+
+class Recommendation:
+    """
+    Class to contain a recommendation. Holds an entity and references to many commments
+    """
+    def __init__(self, entities, images, score, link, comments):
+        self.entity = entities
+        self.images = images
+        self.score = score
+        self.link = link
+        self.comments = comments
+
+    def to_dict(self):
+        return {
+                'recommendation':self.entity,
+                'images':self.images,
+                'score':self.score,
+                'link':self.link,
+                'comments':[x.to_dict() for x in self.comments]
+            }
