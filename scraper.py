@@ -5,13 +5,16 @@ Date: April 4th, 2022
 Description: Methods to extract google links and json data from reddit via a query 
 """
 
-import re, requests, concurrent.futures
+import concurrent.futures
+import re
+import requests
 
 # GLOBALS
 HEADER = {'User-agent': 'Recommeddit-Bot 0.101'}
 MIN_NUM_OF_RESULTS = 0
 MAX_COMMENTS = 200
 reddit_re = re.compile(r'https://www\.reddit\.com/r/[\w]+/comments/.*?/')
+
 
 def _safe_req(link):
     """
@@ -38,10 +41,10 @@ def scrape_reddit_links_from_google_query(query):
     words = query.split(' ')
     words.append('site:reddit.com')
     urls = []
-    for page in range(0,MIN_NUM_OF_RESULTS + 10, 10):
+    for page in range(0, MIN_NUM_OF_RESULTS + 10, 10):
         url = 'https://www.google.com/search?q=' + '+'.join(words) + '&start=' + str(page)
         urls.append(url)
-    
+
     # Asynchronous requests and scraping
     outputs = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(urls)) as exec:
@@ -51,6 +54,7 @@ def scrape_reddit_links_from_google_query(query):
             if result is not None:
                 outputs.extend(reddit_re.findall(result.text))
     return outputs
+
 
 def scrape_json_from_reddit_links(links):
     """
@@ -67,6 +71,7 @@ def scrape_json_from_reddit_links(links):
                 outputs.append(result)
     return [r.json() for r in outputs]
 
+
 if __name__ == '__main__':
-    links = scrape_reddit_links_from_google_query('best microwave', 20)
+    links = scrape_reddit_links_from_google_query('best microwave')
     jsons = scrape_json_from_reddit_links(links)

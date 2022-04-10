@@ -1,15 +1,14 @@
-from scraper import scrape_reddit_links_from_google_query, scrape_json_from_reddit_links
-from json_parser import parse
-from clean_text import clean_text
 import spacy
-from comment import Recommendation
-from Wikidup import top_wikidata, wikidata
+
+from json_parser import parse
 from scoring import calc_points
+from scraper import scrape_reddit_links_from_google_query, scrape_json_from_reddit_links
 
 # Loading spacy pipeline
 # spacy.require_gpu()
 NLP = spacy.load('tok2vec/model-best')
 NLP.add_pipe('sentencizer')
+
 
 def get_recommendations(query):
     """
@@ -19,10 +18,10 @@ def get_recommendations(query):
     """
     # Scrape google for links
     links = scrape_reddit_links_from_google_query(query)
-    
+
     # Scrape reddit and parse into dicts from links
     jsons = scrape_json_from_reddit_links(links)
-    
+
     # Parse dicts for comment objects (text cleaning done in parse method)
     threads = []
     all_comments = []
@@ -41,16 +40,16 @@ def get_recommendations(query):
         comment.doc = doc
         comment.sentences = [s.text for s in doc.sents]
         comment.ents = [x.text for x in doc.ents]
-    
+
     # Get all entities [[ent, comment], ...]
     ents = _get_entities(all_comments)
 
     # Score entities and sort
     for lst in ents:
-        lst.append(calc_points(lst[1], lst[1].score)) # [[ent, comment, score], ...]
-    ents.sort(key=lambda x: x[2], reverse=True)
+        lst.append(calc_points(lst[1], lst[1].score))  # [[ent, comment, score], ...]
+    ents.sort(key=lambda x: x[2], reverse=True)  # Sort by score
 
-    # From here, put in loop and wait until ten recieved
+    # From here, put in loop and wait until ten received
     # De-Dupe and Consolidate (obtain wikidata ID and real name)
     # Cross reference remaining
     # recommendations = []
@@ -59,9 +58,10 @@ def get_recommendations(query):
     #     recs = cross_ref(recs)
     #     recommendations.extend(recs)
     #     ents = ents[10:]
-    
+
     # Return in dict format
     return ents
+
 
 def _get_entities(comments):
     entities = []
@@ -77,6 +77,7 @@ def de_dupe(entities):
     # Create n < 10 recommendation objects with one associated entity name
         # and a list of 1 or more comments
     pass
+
 
 def cross_ref(entities):
     pass

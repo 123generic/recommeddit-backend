@@ -5,24 +5,27 @@ Date: April 7th, 2022
 Description: 
 """
 
-import requests, re
-import urllib.parse
+import re
 import time
+import urllib.parse
+
+import requests
 
 pattern_cat = re.compile('<div class="wikibase-entitytermsview-heading-description ">(.+?)</div>')
 pattern_tit = re.compile('<title>(.+?)</title>')
 
 params = {
-    "action" : "query",
-    "format" : "json",
-    "prop" : "categories|categoryinfo|description|duplicatefiles|entityterms|extlinks|extracts|fileusage|globalusage|imageinfo|images|info|iwlinks|langlinks|links|linkshere|mapdata|mmcontent|pageimages|pageprops|pageterms|redirects|pageviews|revisions|templates|transcludedin|videoinfo",
-    "list" : "search",
-    "srsearch" : "wikipedia",
-    "srlimit" : 3,
-    "srprop" : "sectiontitle"
+    "action": "query",
+    "format": "json",
+    "prop": "categories|categoryinfo|description|duplicatefiles|entityterms|extlinks|extracts|fileusage|globalusage|imageinfo|images|info|iwlinks|langlinks|links|linkshere|mapdata|mmcontent|pageimages|pageprops|pageterms|redirects|pageviews|revisions|templates|transcludedin|videoinfo",
+    "list": "search",
+    "srsearch": "wikipedia",
+    "srlimit": 3,
+    "srprop": "sectiontitle"
 }
 
 __sources__ = ['wikipedia']
+
 
 def top_wiki(query, n=3):
     '''
@@ -36,9 +39,13 @@ def top_wiki(query, n=3):
     '''
     params['srlimit'] = n
     params['srsearch'] = query.lower()
-    results = requests.get('https://en.wikipedia.org/w/api.php?' + urllib.parse.urlencode(params, doseq=True)).json()['query']['search']
+    results = \
+        requests.get('https://en.wikipedia.org/w/api.php?' + urllib.parse.urlencode(params, doseq=True)).json()[
+            'query'][
+            'search']
 
     return [r['title'] for r in results]
+
 
 def top_wikidata(query, n=3):
     '''
@@ -52,14 +59,18 @@ def top_wikidata(query, n=3):
     '''
     params['srlimit'] = n
     params['srsearch'] = query.lower()
-    results = requests.get('https://wikidata.org/w/api.php?' + urllib.parse.urlencode(params, doseq=True)).json()['query']['search']
+    results = \
+        requests.get('https://wikidata.org/w/api.php?' + urllib.parse.urlencode(params, doseq=True)).json()['query'][
+            'search']
 
     return [r['title'] for r in results]
+
 
 def wikidata(link):
     link = f"https://www.wikidata.org/wiki/{link}"
     data = requests.get(link).text
     return [re.findall(pattern_tit, data)[0].split(" - Wikidata")[0], re.findall(pattern_cat, data)[0]]
+
 
 if __name__ == '__main__':
     # test out wikidata api
