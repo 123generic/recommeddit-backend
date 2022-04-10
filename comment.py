@@ -22,7 +22,6 @@ class Thread:
         self.score = kwargs['score']
         self.upvote_ratio = kwargs['upvote_ratio']
         self.author = kwargs['author']
-        self.author_fullname = kwargs['author_fullname']
         self.subreddit_name_prefixed = kwargs['subreddit_name_prefixed']
         self.over_18 = kwargs['over_18']
         self.url = kwargs['url']
@@ -47,13 +46,14 @@ class Comment:
         self.sentiment_score  = None # score
         self.doc = None
         self.ents = []
+        # self.dedupe_name = None
+        self.dedupe_image = None  # URL to image
         self.subreddit_id = kwargs['subreddit_id']
         self.subreddit = kwargs['subreddit']
         self.id = kwargs['id']
         self.author = kwargs['author']
         self.parent_id = kwargs['parent_id']
         self.score = kwargs['score']
-        self.author_fullname = kwargs['author_fullname']
         self.body = kwargs['body']
         self.comment = None  # cleaned comment
         self.name = kwargs['name']

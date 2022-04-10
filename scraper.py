@@ -9,7 +9,7 @@ import re, requests, concurrent.futures
 
 # GLOBALS
 HEADER = {'User-agent': 'Recommeddit-Bot 0.101'}
-MIN_NUM_OF_RESULTS = 30
+MIN_NUM_OF_RESULTS = 0
 MAX_COMMENTS = 200
 reddit_re = re.compile(r'https://www\.reddit\.com/r/[\w]+/comments/.*?/')
 
@@ -26,7 +26,7 @@ def _safe_req(link):
         print('caught bad url')
         return None
 
-def scrape_reddit_links_from_google_query(query, limit):
+def scrape_reddit_links_from_google_query(query):
     """
     Returns list of reddit urls given a plain text query.
     query: plain text query to search for

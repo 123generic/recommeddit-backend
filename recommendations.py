@@ -7,7 +7,8 @@ from Wikidup import top_wikidata, wikidata
 from scoring import calc_points
 
 # Loading spacy pipeline
-NLP = spacy.load('NER-Model')
+# spacy.require_gpu()
+NLP = spacy.load('tok2vec/model-best')
 NLP.add_pipe('sentencizer')
 
 def get_recommendations(query):
@@ -25,10 +26,14 @@ def get_recommendations(query):
     # Parse dicts for comment objects (text cleaning done in parse method)
     threads = []
     all_comments = []
-    for j in jsons:
-        thread, comments = parse(j)
-        threads.append(thread)
-        all_comments.extend(comments)
+    for num, j in enumerate(jsons):
+        try:
+            thread, comments = parse(j)
+            threads.append(thread)
+            all_comments.extend(comments)
+        except:
+            print(num)
+
 
     # NER and get sentences
     docs = NLP.pipe(x.comment for x in all_comments)
@@ -67,7 +72,14 @@ def _get_entities(comments):
 
 
 def de_dupe(entities):
+    # Call wikidup wrapper in parallel for all ten entities
+    # Sequentially, determine which entities are the same
+    # Create n < 10 recommendation objects with one associated entity name
+        # and a list of 1 or more comments
     pass
 
 def cross_ref(entities):
     pass
+
+if __name__ == '__main__':
+    print(get_recommendations('best laptop'))

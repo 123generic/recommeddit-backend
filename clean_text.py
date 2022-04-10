@@ -42,4 +42,4 @@ def clean_text(text):
     returns: cleaned text
     """
     t = __md.convert(text)
-    return unidecode(html.decode(t.replace('\n',' ')))
+    return unidecode(html.unescape(t.replace('\n',' ')))
