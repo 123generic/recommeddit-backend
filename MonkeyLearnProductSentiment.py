@@ -1,4 +1,5 @@
 # hide api
+import asyncio
 import itertools
 import os
 import time
@@ -181,11 +182,15 @@ def recommendation_extractor_chunked(comment_list, query):
         extraction.general_category = general_category
         return extraction
 
-    data = seq(comment_list.to_list()).map(str).to_list()
-    pool = Pool(processes=len(data))
-    results = pool.map(analyze_entity_sentiment, data)
-    pool.close()
-    pool.join()
+    async def get_extractions(comments):
+        extraction_coroutines = []
+        for comment in comments:
+            extraction_coroutines.append(asyncio.to_thread(analyze_entity_sentiment, comment))
+        results = await asyncio.gather(*extraction_coroutines)
+        return results
+
+    data = comment_list.to_list()
+    results = asyncio.run(get_extractions(data))
 
     results = list(itertools.chain(*results))  # flatten
 

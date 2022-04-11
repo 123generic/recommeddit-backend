@@ -6,8 +6,8 @@ from markdown import Markdown
 def unmark_element(element, stream=None):
     if stream is None:
         stream = StringIO()
-    if element.name:
-        stream.write(element.name)
+    if element.text:
+        stream.write(element.text)
     for sub in element:
         unmark_element(sub, stream)
     if element.tail:

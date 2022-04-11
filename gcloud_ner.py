@@ -68,8 +68,8 @@ def analyze_entity_sentiment(comment):
         mentions = []
         for mention in entity.mentions:
             mention_dict = {}
-            print(u"Mention text: {}".format(mention.name.content))
-            mention_dict['text'] = mention.name.content
+            print(u"Mention text: {}".format(mention.text.content))
+            mention_dict['text'] = mention.text.content
             # Get the mention type, e.g. PROPER for proper noun
             print(
                 u"Mention type: {}".format(language_v1.EntityMention.Type(mention.type_).name)
