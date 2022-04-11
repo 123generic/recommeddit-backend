@@ -51,10 +51,13 @@ def _get_comments(thread, json):
     top_level_comments = []
     all_comments = []
     for listing in tree:
-        c = listing['data']
-        top_level, unrolled_tree = _build_tree(thread, c)
-        top_level_comments.append(top_level)
-        all_comments.extend(unrolled_tree)
+        try: 
+            c = listing['data']
+            top_level, unrolled_tree = _build_tree(thread, c)
+            top_level_comments.append(top_level)
+            all_comments.extend(unrolled_tree)
+        except:
+            pass  # oh well
     return top_level_comments, all_comments
 
        

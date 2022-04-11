@@ -1,14 +1,13 @@
 import spacy
-
 from json_parser import parse
 from scoring import calc_points
 from scraper import scrape_reddit_links_from_google_query, scrape_json_from_reddit_links
 
 # Loading spacy pipeline
-# spacy.require_gpu()
-NLP = spacy.load('tok2vec/model-best')
+spacy.require_gpu()
+NLP = spacy.load('roberta-model-best')
+#NLP = spacy.load('../tok2vec/model-best')
 NLP.add_pipe('sentencizer')
-
 
 def get_recommendations(query):
     """
@@ -16,6 +15,7 @@ def get_recommendations(query):
     query: query to search for
     returns: list of recommendation objects
     """
+
     # Scrape google for links
     links = scrape_reddit_links_from_google_query(query)
 
@@ -25,13 +25,10 @@ def get_recommendations(query):
     # Parse dicts for comment objects (text cleaning done in parse method)
     threads = []
     all_comments = []
-    for num, j in enumerate(jsons):
-        try:
-            thread, comments = parse(j)
-            threads.append(thread)
-            all_comments.extend(comments)
-        except:
-            print(num)
+    for j in jsons:
+        thread, comments = parse(j)
+        threads.append(thread)
+        all_comments.extend(comments)
 
 
     # NER and get sentences
@@ -46,7 +43,7 @@ def get_recommendations(query):
 
     # Score entities and sort
     for lst in ents:
-        lst.append(calc_points(lst[1], lst[1].score))  # [[ent, comment, score], ...]
+        lst.append(calc_points(lst[1]))  # [[ent, comment, score], ...]
     ents.sort(key=lambda x: x[2], reverse=True)  # Sort by score
 
     # From here, put in loop and wait until ten received
@@ -60,7 +57,7 @@ def get_recommendations(query):
     #     ents = ents[10:]
 
     # Return in dict format
-    return ents
+    return list(zip(*ents))[0]
 
 
 def _get_entities(comments):

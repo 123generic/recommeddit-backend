@@ -97,7 +97,7 @@ def gkg_query(query_string, threshold=1, print_results=False):
     # query KG
     url = 'https://kgsearch.googleapis.com/v1/entities:search' + '?' + urllib.parse.urlencode(params)
     if print_results:
-        print(url, end="\n\n")
+        print(url)
     response = json.loads(urllib.request.urlopen(url).read())
 
     # process results
@@ -117,21 +117,21 @@ def gkg_query(query_string, threshold=1, print_results=False):
                 return (False, None)
         if word_count >= len(query_string.split()) - threshold:
             if print_results:
-                print(f"Query of `{query_string}` found TRUE by the following search result:\n")
+                print(f"Query of `{query_string}` found TRUE by the following search result:")
                 print(result)
             return True,
     return False, None
 
 
 if __name__ == '__main__':
-    query_string = 'vscode ide'
-    print('Query:', query_string, end='\n\n\n\n')
+    query_string = 'marea new york restaurants'
+    print('Query:', query_string)
 
     res1 = gkg_query(query_string, threshold=1, print_results=True)
-    res2 = False  # with_serp(query_string)
-    if res1:
-        print("SUCCESS 1")
-    elif res2[0]:
-        print("SUCCESS 2")
-    else:
-        print("FAILURE")
+    res2 = (False, None)  # with_serp(query_string)
+    # if gkg_query(query_string, threshold=1, print_results=True)[0]:
+    #     print("SUCCESS 1")
+    # elif with_serp(query_string)[0]:
+    #     print("SUCCESS 2")
+    # else:
+    #     print("FAILURE")
