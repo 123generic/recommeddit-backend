@@ -10,7 +10,7 @@ Uses regex to parse comments from requests object
 
 
 def parse_info(request_object):
-    text = request_object.text
+    text = request_object.name
     comments = re.findall(r'"body": "(.*?)"', text)  # todo: preprocess comments
     if len(comments) == 0:  # If no comments, nothing to do
         return None

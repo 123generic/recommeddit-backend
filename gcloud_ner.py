@@ -8,7 +8,7 @@ from google.cloud import language_v1
 
 
 def analyze_entity_sentiment(comment):
-    text_content = comment.text
+    text_content = comment.name
     upvotes = comment.score
 
     client = language_v1.LanguageServiceClient()
@@ -68,8 +68,8 @@ def analyze_entity_sentiment(comment):
         mentions = []
         for mention in entity.mentions:
             mention_dict = {}
-            print(u"Mention text: {}".format(mention.text.content))
-            mention_dict['text'] = mention.text.content
+            print(u"Mention text: {}".format(mention.name.content))
+            mention_dict['text'] = mention.name.content
             # Get the mention type, e.g. PROPER for proper noun
             print(
                 u"Mention type: {}".format(language_v1.EntityMention.Type(mention.type_).name)

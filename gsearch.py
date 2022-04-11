@@ -6,12 +6,30 @@ import re
 import urllib
 
 from dotenv import load_dotenv
+from glom import glom
+from selenium import webdriver
+from selenium.webdriver.common.by import By
 from serpapi import GoogleSearch
 
 load_dotenv(".env")
 
 serp_api_key = os.getenv("SERPAPI_API_KEY")
 google_knowledge_graph_api_key = os.getenv("GOOGLE_KG_API_KEY")
+
+
+def serp(query_string):
+    params = {
+        "q": query_string.lower(),
+        "api_key": serp_api_key,
+        "hl": "en",
+        "gl": "us",
+    }
+
+    search = GoogleSearch(params)  # complete Google search with params
+
+    results = search.get_dict()
+
+    return results
 
 
 def with_serp(query_string):
@@ -29,7 +47,9 @@ def with_serp(query_string):
 
     params = {
         "q": query_string.lower(),
-        "api_key": serp_api_key
+        "api_key": serp_api_key,
+        "hl": "en",
+        "gl": "us",
     }
 
     search = GoogleSearch(params)  # complete Google search with params
@@ -37,7 +57,7 @@ def with_serp(query_string):
     del params  # delete the configuration dictionaries that hold the api key
 
     results = search.get_dict()
-    return process_results(query_string, results)[0]  # check if results are good
+    return process_results(query_string, results)  # check if results are good
 
 
 def process_results(query_string, results):
@@ -58,8 +78,10 @@ def process_results(query_string, results):
     for web_result in results['organic_results']:
         count = 0
         for word in words:
-            if word in web_result['about_this_result']['keywords'].lower() or word in web_result[
-                'title'].lower() or word in web_result['snippet'].lower():
+            word = word.lower()
+            if word in [keyword.lower() for keyword in web_result['about_this_result']['keywords']] or \
+                    word in web_result['title'].lower() or \
+                    word in web_result['snippet'].lower():
                 count += 1
         if count == len(words):
             return True, web_result['link']
@@ -78,7 +100,7 @@ def clean_string(s):
     return s
 
 
-def gkg_query(query_string, threshold=1, print_results=False):
+def gkg_query(mid):
     """
     Use Google's Knowledge Graph Search API call and analyze the results to check
     if the output is reasonable for our search query
@@ -89,7 +111,7 @@ def gkg_query(query_string, threshold=1, print_results=False):
                     default = 1 -- only one missing word will be tolerated
     """
     params = {
-        'query': query_string,
+        'ids': mid,
         'limit': 10,
         'indent': True,
         'key': google_knowledge_graph_api_key
@@ -97,37 +119,35 @@ def gkg_query(query_string, threshold=1, print_results=False):
 
     # query KG
     url = 'https://kgsearch.googleapis.com/v1/entities:search' + '?' + urllib.parse.urlencode(params)
-    if print_results:
-        print(url, end="\n\n")
     response = json.loads(urllib.request.urlopen(url).read())
 
     # process results
-    query_string = clean_string(query_string)
-    if print_results:
-        print(response)
-    for result in response['itemListElement']:
-        if result['resultScore'] < 1:
-            continue
-        word_count = 0
-        for word in query_string.split():
-            try:
-                if word.lower() in clean_string(result['result']['detailedDescription']['articleBody'].lower()).split():
-                    word_count += 1
-                    continue
-            except:
-                return False
-        if word_count >= len(query_string.split()) - threshold:
-            if print_results:
-                print(f"Query of `{query_string}` found TRUE by the following search result:\n")
-                print(result)
-            return True
-    return False
+    result = glom(response, 'itemListElement.0.result', default=None)
+    name = glom(result, 'name', default=None)
+    description = glom(result, 'detailedDescription.articleBody', default=None)
+    image_url = glom(result, 'image.url', default=None)
+
+    if image_url:
+        driver = webdriver.Firefox()
+        driver.get(image_url)
+        image_url = driver.find_element(by=By.CSS_SELECTOR, value='.fullImageLink > a').get_attribute('href')
+        driver.close()
+
+    return {
+        'name': name,
+        'description': description,
+        'image_url': image_url
+    }
 
 
 if __name__ == '__main__':
-    query_string = 'vscode ide'
-    print('Query:', query_string, end='\n\n\n\n')
-    if with_serp(query_string):
-        print("SUCCESS")
-    else:
-        print("FAILURE")
+    query_string = 'vscode c++ ide'
+    res = serp("vscode ide")
+    print(res)
+    # print('Query:', query_string, end='\n\n\n\n')
+    # res = with_serp(query_string)
+    # print(res)
+    # if res:
+    #     print("SUCCESS")
+    # else:
+    #     print("FAILURE")

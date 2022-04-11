@@ -1,13 +1,58 @@
 from collections import namedtuple
 
+from glom import glom
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+
+from gsearch import gkg_query, serp
+from images import get_images
+from search import return_top_result
+
 Bounds = namedtuple('Bounds', "start end")
 
 
+def populate_extraction(extraction):
+    if not extraction.url:
+        extraction.url = return_top_result(f"{extraction.name} {extraction.general_category}")
+    if extraction.mid:
+        result = gkg_query(extraction.mid)
+        if result.name:
+            extraction.name = result.name
+        if result.description:
+            extraction.description = result.description
+        if result.image_url:
+            extraction.image_urls.append(result.image_url)
+    else:
+        if extraction.wikidata_entry:
+            extraction.name = extraction.wikidata_entry.title
+            extraction.description = extraction.wikidata_entry.description
+        query = serp(f"{extraction.name} {extraction.general_category}")
+        about_page_link = query['organic_results'][0]['about_page_link']
+        driver = webdriver.Firefox()
+        driver.get(about_page_link)
+        extraction.description = driver.find_element(by=By.CSS_SELECTOR, value='[jsdata=deferred-i7] > div > div') \
+                                     .text.rsplit('.', 1)[0] + '.'
+        driver.close()
+    if len(extraction.image_urls) <= 1:
+        extraction.image_urls.extend(get_images(extraction.name, extraction.general_category))
+
+
 class Extraction:
-    def __init__(self, text, score, comments, mid=None, wikidata_entry=None):
-        self.text = text
+    def __init__(self, name, score, comments=None, category=None, general_category=None, description=None, url=None,
+                 cross_referenced_url=None, image_urls=None, mid=None, wikidata_entry=None):
+        if image_urls is None:
+            image_urls = []
+        if comments is None:
+            comments = []
+        self.name = name
         self.score = score
         self.comments = comments
+        self.category = category
+        self.general_category = general_category
+        self.description = description
+        self.url = url
+        self.cross_referenced_url = cross_referenced_url
+        self.image_urls = image_urls
         self.mid = mid
         self.wikidata_entry = wikidata_entry
 
@@ -18,11 +63,8 @@ class Extraction:
 
     @classmethod
     def from_dict(cls, d):
-        try:
-            google_knowledge_graph_entry = d['metadata']['mid']
-        except (NameError, AttributeError):
-            google_knowledge_graph_entry = None
-        return cls(d['name'], d['score'], d['comments'], google_knowledge_graph_entry)
+        mid = glom(d, 'metadata.mid', default=None)
+        return cls(d['name'], d['score'], d['comments'], mid=mid)
 
 
 class ExtractionList:
@@ -43,10 +85,7 @@ class ExtractionList:
     def from_duped_results(cls, duped_results):
         d = {}
         for duped_result in duped_results:
-            if 'metadata' in duped_result and 'mid' in duped_result['metadata']:
-                key = duped_result['metadata']['mid']
-            else:
-                key = duped_result['name'].lower()
+            key = glom(duped_result, 'metadata.mid', default=duped_results['name'].lower())
             if key not in d:
                 d[key] = duped_result
             else:
@@ -93,7 +132,7 @@ class CommentList:
             if bounds.start <= offset_start < bounds.end:
                 start = offset_start - bounds.start
                 end = offset_end - bounds.start
-                self.comments[i].extractions.append(Extraction(extraction.text, Bounds(start, end)))
+                self.comments[i].extractions.append(Extraction(extraction.name, Bounds(start, end)), None, None, [])
                 return
 
     def to_list(self):

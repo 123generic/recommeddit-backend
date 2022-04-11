@@ -12,3 +12,5 @@ nltk~=3.7
 vaderSentiment~=3.3.2
 google-cloud-language~=2.4.1
 Pebble~=4.6.3
+glom~=22.1.0
+selenium~=4.1.3

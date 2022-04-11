@@ -14,7 +14,7 @@ from pebble import ProcessPool
 import cross_reference
 import dedupe
 import wikidup
-from comment import ExtractionList
+from comment import ExtractionList, populate_extraction
 from gcloud_ner import analyze_entity_sentiment
 
 load_dotenv(".env")
@@ -173,6 +173,14 @@ def keyword_extractor_chunked(chunked_comments, query):
 
 
 def recommendation_extractor_chunked(comment_list, query):
+    category = query.split(' ', 1)[1]
+    general_category = category[-1]
+
+    def add_category(extraction):
+        extraction.category = category
+        extraction.general_category = general_category
+        return extraction
+
     data = seq(comment_list.to_list()).map(str).to_list()
     pool = Pool(processes=len(data))
     results = pool.map(analyze_entity_sentiment, data)
@@ -182,58 +190,57 @@ def recommendation_extractor_chunked(comment_list, query):
     results = list(itertools.chain(*results))  # flatten
 
     extractions = ExtractionList.from_duped_results(results).extractions.sort(key=lambda x: x.score, reverse=True)
+    extractions = seq(extractions).map(add_category).to_list()
 
     additional = 0
-    for i in range(min(len(extractions), 10)):
+    validated_top_extractions = []
+    for i in range(min(len(extractions), 12)):
         if not extractions[i].mid:
             additional += 1
+        else:
+            validated_top_extractions.append(extractions[i])
 
     unvalidated_extractions = seq(extractions).filter(lambda x: not x.mid).to_list()
 
     deduped = dedupe.dedupe(seq(unvalidated_extractions).map(lambda extraction: extraction.name).to_list())
-    deduped_results = seq(unvalidated_extractions).filter(lambda extraction: extraction.name in deduped)
+    deduped_results = seq(unvalidated_extractions).filter(lambda extraction: extraction.name in deduped).to_list()
 
     seen_wikidata_ids = {}
 
-    wiki_duped_results = []
+    cross_referenced_results = []
 
-    while len(wiki_duped_results) < additional:
-        pool = ProcessPool()
-        wiki_results = pool.map(wikidup.get_wikidata, unvalidated_extractions[:floor(additional * 1.5)], timeout=10)
+    pool = ProcessPool()
+    while len(cross_referenced_results) < additional or not deduped_results:
+        wiki_duped_extractions = []
+        to_validate = deduped_results[:floor(additional * 1.5)]
+        wiki_results = pool.map(wikidup.get_wikidata, to_validate, timeout=10)
         pool.join()
-        for wiki_result, extraction in zip(wiki_results, unvalidated_extractions):
+        for i, (wiki_result, extraction) in enumerate(zip(wiki_results, to_validate)):
             if wiki_result:
                 if wiki_result.id not in seen_wikidata_ids:
                     seen_wikidata_ids[wiki_result.id] = wiki_result
                     extraction.wikidata_entry = wiki_result
-                    wiki_duped_results.append(extraction)
+                    wiki_duped_extractions.append(extraction)
             else:
-                wiki_duped_results.append(extraction)
-        
-    timeout = 20 * 1000  # 20 seconds
-    start = time.time()
-    wiki_results = set()
-    wiki_deduped_results = []
-    for result in deduped_results:
-        if time.time() - start > timeout:
-            break
-        wiki_result = dedupe.top_wiki(result[0], query)
-        if wiki_result:
-            wiki_result = wiki_result[0]
-        if wiki_result not in wiki_results:
-            wiki_results.add(wiki_result)
-            wiki_deduped_results.append(result)
+                wiki_duped_extractions.append(extraction)
+        cross_results = pool.map(cross_reference.with_serp,
+                                 [f"{extraction.name} {category}" for extraction in wiki_duped_extractions],
+                                 timeout=10)
+        pool.join()
+        for extraction, (is_valid, success_url) in zip(wiki_duped_extractions, cross_results):
+            if is_valid:
+                extraction.cross_referenced_url = success_url
+                cross_referenced_results.append(extraction)
+    pool.close()
 
-    num_results = 0
-    category = query.split(' ', 1)[1]
-    cross_referenced_results = []
-    for iters, result in enumerate(wiki_deduped_results):
-        if num_results >= 15 or (iters >= 20 and num_results >= 10) or \
-                (iters >= 30 and num_results >= 5) or iters >= 40:
-            break
-        if cross_reference.with_serp(f"{result[0]} {category}")[0]:
-            cross_referenced_results.append(result)
-    return cross_referenced_results
+    validated_top_extractions.extend(cross_referenced_results)
+
+    pool = Pool(processes=len(validated_top_extractions))
+    pool.map(populate_extraction, validated_top_extractions)
+    pool.close()
+    pool.join()
+
+    return validated_top_extractions
 
 
 def movie_extractor_chunked(chunked_comments):

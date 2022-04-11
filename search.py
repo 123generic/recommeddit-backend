@@ -28,3 +28,8 @@ def return_links(search_string):
         if domain.endswith("reddit.com") and "comments" in url:
             links.append(url)
     return links
+
+
+def return_top_result(search_string):
+    result = resource.list(q=search_string, cx=cx_key).execute()
+    return result["link"][0]  # link is exact url

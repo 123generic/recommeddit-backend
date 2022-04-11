@@ -42,6 +42,21 @@ def get_recommendations(query):
     )
 
     results = MonkeyLearnProductSentiment.recommendation_extractor_chunked(comment_list, query)
-    recommendations = seq(results).smap(lambda text, score: {"keyword": text, "score": score}).to_list()
 
-    return {"error_message": "", "success": True, "recommendations": recommendations}
+    def convert2serialize(obj):
+        if isinstance(obj, dict):
+            return {k: convert2serialize(v) for k, v in obj.items()}
+        elif hasattr(obj, "_ast"):
+            return convert2serialize(obj._ast())
+        elif not isinstance(obj, str) and hasattr(obj, "__iter__"):
+            return [convert2serialize(v) for v in obj]
+        elif hasattr(obj, "__dict__"):
+            return {
+                k: convert2serialize(v)
+                for k, v in obj.__dict__.items()
+                if not callable(v) and not k.startswith('_')
+            }
+        else:
+            return obj
+
+    return {"error_message": "", "success": True, "recommendations": convert2serialize(results)}
