@@ -29,7 +29,7 @@ of lists of the form [[title, text, score, num comments, comment] x N].
 
 def assemble_thread_info(url, header):
     try:
-        json_tree = requests.get(url + '.json?limit=200', headers=header)
+        json_tree = requests.get(url + '.json?limit=500', headers=header)
     except:
         print('caught a bad url')
         return None

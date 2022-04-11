@@ -4,29 +4,58 @@ Bounds = namedtuple('Bounds', "start end")
 
 
 class Extraction:
-    def __init__(self, text, bounds):
+    def __init__(self, text, score, comments, mid=None, wikidata_entry=None):
         self.text = text
-        self.bounds = bounds
+        self.score = score
+        self.comments = comments
+        self.mid = mid
+        self.wikidata_entry = wikidata_entry
+
+    # @classmethod
+    # def from_dict(cls, d, offset=0):
+    #     start, end = [bound + offset for bound in d['offset_span']]
+    #     return cls(d['extracted_text'], Bounds(start, end))
 
     @classmethod
-    def from_dict(cls, d, offset=0):
-        start, end = [bound + offset for bound in d['offset_span']]
-        return cls(d['extracted_text'], Bounds(start, end))
+    def from_dict(cls, d):
+        try:
+            google_knowledge_graph_entry = d['metadata']['mid']
+        except (NameError, AttributeError):
+            google_knowledge_graph_entry = None
+        return cls(d['name'], d['score'], d['comments'], google_knowledge_graph_entry)
 
 
 class ExtractionList:
     def __init__(self, extractions):
         self.extractions = extractions
 
+    # @classmethod
+    # def from_chunked_results(cls, chunked_results):
+    #     extractions = []
+    #     prev_len = 0
+    #     for chunked_result in chunked_results:
+    #         for extraction in chunked_result['extractions']:
+    #             extractions.append(Extraction.from_dict(extraction, offset=prev_len))
+    #         prev_len += len(chunked_result['text']) + 2  # we add 2 because there is "\n\n" between comments
+    #     return cls(extractions)
+
     @classmethod
-    def from_chunked_results(cls, chunked_results):
+    def from_duped_results(cls, duped_results):
+        d = {}
+        for duped_result in duped_results:
+            if 'metadata' in duped_result and 'mid' in duped_result['metadata']:
+                key = duped_result['metadata']['mid']
+            else:
+                key = duped_result['name'].lower()
+            if key not in d:
+                d[key] = duped_result
+            else:
+                d[key]['score'] += duped_result['score']
+                d[key]['comments'].extend(duped_result['comments'])
         extractions = []
-        prev_len = 0
-        for chunked_result in chunked_results:
-            for extraction in chunked_result['extractions']:
-                extractions.append(Extraction.from_dict(extraction, offset=prev_len))
-            prev_len += len(chunked_result['text']) + 2  # we add 2 because there is "\n\n" between comments
-        return cls(extractions)
+        for extraction in d.values():
+            extractions.append(Extraction.from_dict(extraction))
+        return cls(list(d.values()))
 
 
 class Comment:

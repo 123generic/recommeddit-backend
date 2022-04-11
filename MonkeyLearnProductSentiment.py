@@ -1,17 +1,21 @@
 # hide api
+import itertools
 import os
 import time
 from collections import defaultdict
+from math import floor
+from multiprocessing import Pool
 
 from dotenv import load_dotenv
 from functional import seq
 from monkeylearn import MonkeyLearn
+from pebble import ProcessPool
 
-import comment_sentiment
 import cross_reference
 import dedupe
-import util
+import wikidup
 from comment import ExtractionList
+from gcloud_ner import analyze_entity_sentiment
 
 load_dotenv(".env")
 api_key = os.getenv("URL_SCRAPE_API_KEY")
@@ -169,38 +173,43 @@ def keyword_extractor_chunked(chunked_comments, query):
 
 
 def recommendation_extractor_chunked(comment_list, query):
-    model_id = "ex_LS5yxu8k"
-    data = seq(comment_list.chunk()).map(str).to_list()
-    results = ml.extractors.extract(model_id, data).body
+    data = seq(comment_list.to_list()).map(str).to_list()
+    pool = Pool(processes=len(data))
+    results = pool.map(analyze_entity_sentiment, data)
+    pool.close()
+    pool.join()
 
-    extractions = ExtractionList.from_chunked_results(results)
+    results = list(itertools.chain(*results))  # flatten
 
-    for extraction in extractions.extractions:
-        comment_list.add_extraction(extraction)
+    extractions = ExtractionList.from_duped_results(results).extractions.sort(key=lambda x: x.score, reverse=True)
 
-    recommendations = defaultdict(float)
+    additional = 0
+    for i in range(min(len(extractions), 10)):
+        if not extractions[i].mid:
+            additional += 1
 
-    for comment in comment_list.comments:
-        comment_recommendations = comment_sentiment \
-            .get_scores(seq(comment.extractions)
-                        .map(lambda extraction: extraction.text)
-                        .to_list(),
-                        comment.text,
-                        int(comment.score))
-        for recommendation, score in util.chunks(comment_recommendations, 2):
-            recommendations[recommendation] += score
+    unvalidated_extractions = seq(extractions).filter(lambda x: not x.mid).to_list()
 
-    results = dict(
-        sorted(
-            recommendations.items(),
-            key=lambda item: item[1],
-            reverse=True
-        )
-    ).items()
+    deduped = dedupe.dedupe(seq(unvalidated_extractions).map(lambda extraction: extraction.name).to_list())
+    deduped_results = seq(unvalidated_extractions).filter(lambda extraction: extraction.name in deduped)
 
-    deduped = dedupe.dedupe(seq(results).map(lambda result: result[0]).to_list())
-    deduped_results = seq(results).filter(lambda result: result[0] in deduped)
+    seen_wikidata_ids = {}
 
+    wiki_duped_results = []
+
+    while len(wiki_duped_results) < additional:
+        pool = ProcessPool()
+        wiki_results = pool.map(wikidup.get_wikidata, unvalidated_extractions[:floor(additional * 1.5)], timeout=10)
+        pool.join()
+        for wiki_result, extraction in zip(wiki_results, unvalidated_extractions):
+            if wiki_result:
+                if wiki_result.id not in seen_wikidata_ids:
+                    seen_wikidata_ids[wiki_result.id] = wiki_result
+                    extraction.wikidata_entry = wiki_result
+                    wiki_duped_results.append(extraction)
+            else:
+                wiki_duped_results.append(extraction)
+        
     timeout = 20 * 1000  # 20 seconds
     start = time.time()
     wiki_results = set()

@@ -327,3 +327,7 @@ adventofcode/
 
 # API Keys
 project.ini
+
+# google cloud service account keys
+
+recommeddit*.json
