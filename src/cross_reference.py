@@ -99,7 +99,10 @@ def gkg_query(query_string, threshold=1, print_results=False):
     url = 'https://kgsearch.googleapis.com/v1/entities:search' + '?' + urllib.parse.urlencode(params)
     if print_results:
         print(url)
-    response = json.loads(urllib.request.urlopen(url).read())
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception('too many requests')
+    response = response.json()
 
     # process results
     query_string = clean_string(query_string)

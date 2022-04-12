@@ -63,10 +63,10 @@ def get_recommendations(query):
     # Return in dict format
     return sorted([r.to_dict() for r in recommendations], key=lambda x: x['score'], reverse=True)
 
-def _get_images(recs):
+def _get_images(recs, user_query_nouns):
     recs_results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(recs)) as exec:
-        futures = [exec.submit(get_images_and_links, r.entity, r) for r in recs]
+        futures = [exec.submit(get_images_and_links, r.entity + user_query_nouns, r) for r in recs]
         for x in futures:
             images, link, rec = x.result()
             recs_results.append(rec)

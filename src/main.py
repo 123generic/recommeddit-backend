@@ -1,17 +1,18 @@
 #!/usr/bin/python
-import json
-import sys
+import json, sys, requests, recommendations
+from flask import Flask, request
 
-import requests
+app = Flask(__name__)
 
-import recommendations
+""" GLOBALS """
+ERROR_MESSAGE = {"error_message": "No query", "success": False, "recommendations": []}
 
-
-def auto_suggest(request):
+@app.route("/suggest")
+def auto_suggest():
     if request.args and 'query' in request.args:
         query = request.args.get('query')
     else:
-        query = "best youtube"
+        return ERROR_MESSAGE
 
     cursorPoint = len(query) + 1
     newQuery = "%20".join(query.split())
@@ -24,15 +25,15 @@ def auto_suggest(request):
 
     newResult = [element[0].replace("reddit", "") for element in parsed]
 
-    return {"suggest": newResult}, 200, {'Access-Control-Allow-Origin': '*'}
+    return [{"suggest": newResult}, 200, {'Access-Control-Allow-Origin': '*'}]
 
-
-def search(request):
+@app.route("/search")
+def search():
     if request.args and 'query' in request.args:
         query = request.args.get('query')
     else:
-        return {"error_message": "No query", "success": False, "recommendations": []}
-    return recommendations.get_recommendations(query)
+        return ERROR_MESSAGE
+    return {"success":True, "recommendations":recommendations.get_recommendations(query)}
 
 
 def main():
