@@ -114,17 +114,17 @@ def gkg_query(query_string, threshold=1, print_results=False):
                     word_count += 1
                     continue
             except:
-                return (False, None)
+                return False
         if word_count >= len(query_string.split()) - threshold:
             if print_results:
                 print(f"Query of `{query_string}` found TRUE by the following search result:")
                 print(result)
-            return True,
-    return False, None
+            return True
+    return False
 
 
 if __name__ == '__main__':
-    query_string = 'marea new york restaurants'
+    query_string = 'paint the town loona album'
     print('Query:', query_string)
 
     res1 = gkg_query(query_string, threshold=1, print_results=True)

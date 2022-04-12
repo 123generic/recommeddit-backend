@@ -82,8 +82,10 @@ class Recommendation:
     """
     Class to contain a recommendation. Holds an entity and references to many commments
     """
-    def __init__(self, entities, images, score, link, comments):
-        self.entity = entities
+    def __init__(self, entity, wiki_name, wiki_cat, images, score, link, comments):
+        self.entity = entity
+        self.wiki_name = wiki_name
+        self.wiki_cat = wiki_cat
         self.images = images
         self.score = score
         self.link = link
