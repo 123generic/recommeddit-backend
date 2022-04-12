@@ -35,6 +35,9 @@ def search():
         return ERROR_MESSAGE
     return {"success":True, "recommendations":recommendations.get_recommendations(query)}
 
+@app.route("/debug")
+def debug():
+    return {"success":True}
 
 def main():
     # assume first argument is query. Default query is 'C++ IDE'

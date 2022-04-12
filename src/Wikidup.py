@@ -98,11 +98,11 @@ def matching(wd_ids=[], ents=[], scores=[], comments=[]):
         if de_ind[i] not in seen:
             seen.append(de_ind[i])
             wiki_name, wiki_cat = None, None
-            # wiki_name, wiki_cat = wikidata(de_links[i])
-            # if scores == []: # filler
-            #     scores = [0.0 for i in range(len(ents))]
-            # if comments == []: # filler
-            #     comments = [['1','2','3'] for i in range(len(ents))]
+            wiki_name, wiki_cat = wikidata(de_links[i])
+            if scores == []: # filler
+                scores = [0.0 for i in range(len(ents))]
+            if comments == []: # filler
+                comments = [['1','2','3'] for i in range(len(ents))]
             rec_objs.append(Recommendation(entity=de_ind[i], images=[], score=scores[i], link=[], comments=[comments[i]], wiki_name=wiki_name, wiki_cat=wiki_cat))
         else:
             rec_objs.append(None) # filler for index purposes
