@@ -22,5 +22,7 @@ def get_images_and_links(query, rec):
     results = search.get_dict()
     images_results = [img['original'] for img in results['images_results'][:3]]
     link = results['images_results'][0]['link']
+    rec.images = images_results
+    rec.link = link
 
-    return [img['original'] for img in images_results], link, rec
+    return images_results, link, rec

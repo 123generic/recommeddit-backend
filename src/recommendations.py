@@ -26,7 +26,7 @@ def get_recommendations(query):
     links = scrape_reddit_links_from_google_query(query)
 
     # Scrape reddit and parse into dicts from links
-    jsons = scrape_json_from_reddit_links(links)
+    jsons = scrape_json_from_reddit_links(links[:10])
 
     # Parse dicts for comment objects (text cleaning done in parse method)
     threads = []
@@ -54,7 +54,7 @@ def get_recommendations(query):
     # From here, put in loop and wait until ten received
     # De-Dupe and Consolidate (obtain wikidata ID and real name)
     # Cross reference remaining
-    recommendations = _de_dupe(ents[:100])
+    recommendations = _de_dupe(ents[:50])
     recommendations = _cross_ref(recommendations, user_query_nouns)[:10]
     
     # Attatch images and link to product
@@ -66,11 +66,9 @@ def get_recommendations(query):
 def _get_images(recs):
     recs_results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(recs)) as exec:
-        futures = [exec.submit(get_images_and_links, r.entity) for r in recs]
+        futures = [exec.submit(get_images_and_links, r.entity, r) for r in recs]
         for x in futures:
             images, link, rec = x.result()
-            rec.images = images
-            rec.link = link
             recs_results.append(rec)
     return recs_results
 
@@ -112,4 +110,4 @@ def _cross_ref(recommendations, user_query_nouns):
     return recs
 
 if __name__ == '__main__':
-    print(get_recommendations('best laptop'))
+    print(get_recommendations('best c++ ide'))

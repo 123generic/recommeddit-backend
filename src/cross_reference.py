@@ -6,6 +6,7 @@ import re
 import urllib
 
 from dotenv import load_dotenv
+import requests
 from serpapi import GoogleSearch
 
 load_dotenv(".env")
@@ -127,11 +128,23 @@ if __name__ == '__main__':
     query_string = 'vs code ide'
     print('Query:', query_string)
 
-    res1 = gkg_query(query_string, threshold=1, print_results=True)
-    res2 = (False, None)  # with_serp(query_string)
+    # res1 = gkg_query(query_string, threshold=1, print_results=True)
+    # res2 = (False, None)  # with_serp(query_string)
     # if gkg_query(query_string, threshold=1, print_results=True)[0]:
     #     print("SUCCESS 1")
     # elif with_serp(query_string)[0]:
     #     print("SUCCESS 2")
     # else:
     #     print("FAILURE")
+
+    params = {
+        'query': query_string,
+        'limit': 10,
+        'indent': True,
+        'key': google_knowledge_graph_api_key
+    }
+
+    # query KG
+    url = 'https://kgsearch.googleapis.com/v1/entities:search' + '?' + urllib.parse.urlencode(params)
+    r = requests.get(url)
+    print(r.headers)

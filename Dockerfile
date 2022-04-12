@@ -6,6 +6,7 @@ RUN python -m pip install -U 'spacy[cuda113,transformers,lookups]'
 RUN python -m spacy download en_core_web_trf
 RUN python -m spacy download en_core_web_lg
 RUN apt-get update -y && apt-get install vim -y && apt-get install git -y
+ADD requirements.txt /root
 RUN pip install -r requirements.txt
 ADD src /root
 CMD sleep infinity
