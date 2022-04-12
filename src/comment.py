@@ -74,8 +74,7 @@ class Comment:
             'downs':self.downs,
             'body text':self.body,
             'permalink':'www.reddit.com' + self.permalink,
-            'author name':self.author,
-            # Add author avatar
+            'author name':self.author
         }
 
 class Recommendation:
@@ -95,7 +94,7 @@ class Recommendation:
         return {
                 'recommendation':self.entity,
                 'images':self.images,
-                'score':self.score,
+                'score':round(self.score, 1),
                 'link':self.link,
                 'comments':[x.to_dict() for x in self.comments]
             }

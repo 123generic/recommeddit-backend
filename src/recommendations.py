@@ -4,6 +4,7 @@ from scoring import calc_points
 from scraper import scrape_reddit_links_from_google_query, scrape_json_from_reddit_links
 from Wikidup import top_wikidata, matching
 from cross_reference import gkg_query
+from images import get_images_and_links
 
 # Loading spacy pipeline
 spacy.require_gpu()
@@ -54,11 +55,24 @@ def get_recommendations(query):
     # De-Dupe and Consolidate (obtain wikidata ID and real name)
     # Cross reference remaining
     recommendations = _de_dupe(ents[:100])
-    recommendations = _cross_ref(recommendations, user_query_nouns)
+    recommendations = _cross_ref(recommendations, user_query_nouns)[:10]
+    
+    # Attatch images and link to product
+    recommendations = _get_images(recommendations)
 
     # Return in dict format
     return sorted([r.to_dict() for r in recommendations], key=lambda x: x['score'], reverse=True)
 
+def _get_images(recs):
+    recs_results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(recs)) as exec:
+        futures = [exec.submit(get_images_and_links, r.entity) for r in recs]
+        for x in futures:
+            images, link, rec = x.result()
+            rec.images = images
+            rec.link = link
+            recs_results.append(rec)
+    return recs_results
 
 def _get_entities(comments):
     entities = []

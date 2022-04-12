@@ -11,7 +11,6 @@ import requests
 
 # GLOBALS
 HEADER = {'User-agent': 'Recommeddit-Bot 0.101'}
-MIN_NUM_OF_RESULTS = 0
 MAX_COMMENTS = 200
 reddit_re = re.compile(r'https://www\.reddit\.com/r/[\w]+/comments/.*?/')
 
@@ -40,19 +39,11 @@ def scrape_reddit_links_from_google_query(query):
     # Get all links
     words = query.split(' ')
     words.append('site:reddit.com')
-    urls = []
-    for page in range(0, MIN_NUM_OF_RESULTS + 10, 10):
-        url = 'https://www.google.com/search?q=' + '+'.join(words) + '&start=' + str(page)
-        urls.append(url)
+    url = 'https://www.google.com/search?q=' + '+'.join(words)
 
     # Asynchronous requests and scraping
-    outputs = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(urls)) as exec:
-        futures = [exec.submit(_safe_req, url) for url in urls]
-        for future in futures:
-            result = future.result()
-            if result is not None:
-                outputs.extend(reddit_re.findall(result.text))
+    result = _safe_req(url)
+    outputs = reddit_re.findall(result.text)
     return outputs
 
 

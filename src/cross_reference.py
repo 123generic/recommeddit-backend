@@ -124,7 +124,7 @@ def gkg_query(query_string, threshold=1, print_results=False):
 
 
 if __name__ == '__main__':
-    query_string = 'paint the town loona album'
+    query_string = 'vs code ide'
     print('Query:', query_string)
 
     res1 = gkg_query(query_string, threshold=1, print_results=True)
