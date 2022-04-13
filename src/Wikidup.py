@@ -1,4 +1,5 @@
 from cgi import print_arguments
+import time
 import requests, re, urllib.parse
 from comment import Recommendation
 
@@ -47,7 +48,18 @@ def top_wikidata(query, n=3):
     '''
     params['srlimit'] = n
     params['srsearch'] = query.lower()
-    results = requests.get('https://wikidata.org/w/api.php?' + urllib.parse.urlencode(params, doseq=True)).json()['query']['search']
+    r = requests.get('https://wikidata.org/w/api.php?' + urllib.parse.urlencode(params, doseq=True))
+    times = 0
+    while r.status_code != 200:
+        time.sleep(1)
+        times += 1
+        if times > 5:
+            raise Exception('wikidup failed; thanks anmol', r, r.headers)
+        r = requests.get('https://wikidata.org/w/api.php?' + urllib.parse.urlencode(params, doseq=True))
+    try:
+        results = r.json()['query']['search']
+    except:
+        raise Exception('key error', r.json())
 
     return [r['title'] for r in results]
 

@@ -101,7 +101,9 @@ def gkg_query(query_string, threshold=1, print_results=False):
         print(url)
     response = requests.get(url)
     if response.status_code != 200:
-        raise Exception('too many requests')
+        print(response)
+        print(response.headers)
+        raise Exception('too many requests', response, response.headers)
     response = response.json()
 
     # process results
@@ -126,7 +128,7 @@ def gkg_query(query_string, threshold=1, print_results=False):
             return True
     return False
 
-
+    
 if __name__ == '__main__':
     query_string = 'vs code ide'
     print('Query:', query_string)

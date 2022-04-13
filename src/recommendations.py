@@ -7,7 +7,7 @@ from cross_reference import gkg_query
 from images import get_images_and_links
 
 # Loading spacy pipeline
-spacy.require_gpu()
+spacy.require_gpu(gpu_id=0)
 NLP = spacy.load('roberta-model-best')
 nouns_nlp = spacy.load('en_core_web_lg', disable=['parser','ner','lemmatizer'])
 # NLP = spacy.load('tok2vec')
@@ -54,11 +54,11 @@ def get_recommendations(query):
     # From here, put in loop and wait until ten received
     # De-Dupe and Consolidate (obtain wikidata ID and real name)
     # Cross reference remaining
-    recommendations = _de_dupe(ents[:50])
+    recommendations = _de_dupe(ents[:20])
     recommendations = _cross_ref(recommendations, user_query_nouns)[:10]
     
     # Attatch images and link to product
-    recommendations = _get_images(recommendations)
+    # recommendations = _get_images(recommendations)
 
     # Return in dict format
     return sorted([r.to_dict() for r in recommendations], key=lambda x: x['score'], reverse=True)
