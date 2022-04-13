@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+  name: rec-ingress
+spec:
+  rules:
+  - host: recommeddit.nrp-nautilus.io
+    http:
+      paths:
+      - backend:
+          service:
+            name: rec-svc
+            port:
+              number: 80
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - recommeddit.nrp-nautilus.io

@@ -1,21 +1,26 @@
 #!/usr/bin/python3
 import json, sys, requests, recommendations
-# from flask import Flask, request
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-# app = Flask(__name__)
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 """ GLOBALS """
 ERROR_MESSAGE = {"error_message": "No query", "success": False, "recommendations": []}
 
 @app.get("/suggest")
 def auto_suggest(query):
-    # if request.args and 'query' in request.args:
-    #     query = request.args.get('query')
-    # else:
-    #     return ERROR_MESSAGE
+    if query == '':
+        return [{"suggest": ''}, 200, {'Access-Control-Allow-Origin': '*'}]
 
     cursorPoint = len(query) + 1
     newQuery = "%20".join(query.split())
@@ -31,11 +36,14 @@ def auto_suggest(query):
 
 @app.get("/search")
 def search(query):
-    # if request.args and 'query' in request.args:
-    #     query = request.args.get('query')
-    # else:
-    #     return ERROR_MESSAGE
-    return {"success":True, "recommendations":recommendations.get_recommendations(query)}
+    if query == '':
+        return ERROR_MESSAGE
+    try:
+        r = recommendations.get_recommendations(query)
+        return {"success":True, "recommendations":r}
+    except:
+        #  oh well
+        return {"success":False, "recommendations":'', "error_message":'we\'re overwhelmed, try again later'}
 
 @app.get("/debug")
 def debug():

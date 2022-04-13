@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rec-http
+  labels:
+    k8s-app: rec-http
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      k8s-app: rec-http
+  template:
+    metadata: 
+      labels:
+        k8s-app: rec-http
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-GeForce-RTX-3090
+      containers:
+      - name: rec-pod
+        image: mehir123/recommeddit:latest
+        command: ['sh', '-c', 'uvicorn --host 0.0.0.0 main:app']
+        resources:
+           limits:
+             memory: 10Gi
+             cpu: 2
+             nvidia.com/gpu: 1  
+           requests:
+             memory: 10Gi
+             cpu: 2
+             nvidia.com/gpu: 1  

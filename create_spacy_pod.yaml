@@ -16,7 +16,7 @@ spec:
   containers:
   - name: spacy-pod
     image: mehir123/recommeddit:latest
-    command: ["sh", "-c", "sleep infinity"]
+    command: ["sh", "-c", "uvicorn main:app"]
     resources:
       limits:
         memory: 12Gi
