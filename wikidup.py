@@ -140,4 +140,4 @@ if __name__ == '__main__':
     # t2 = time.time()
     # print("Wikidata", t2 - t1, 'sec')
     # print("wikidata api", wikidata("Q19841877"))
-    print(get_wikidata("goodnotes"))
+    print(get_wikidata("syntax.fm"))

@@ -4,6 +4,7 @@ from glom import glom
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+from comments import comment_to_dict
 from gsearch import gkg_query, serp
 from images import get_images
 from search import return_top_result
@@ -14,13 +15,13 @@ Bounds = namedtuple('Bounds', "start end")
 def populate_extraction(extraction):
     if not extraction.url:
         extraction.url = return_top_result(f"{extraction.name} {extraction.general_category}")
-    if extraction.mid:
+    if extraction.mid and extraction.mid.startswith("/m/"):
         result = gkg_query(extraction.mid)
-        if result.name:
+        if result['name']:
             extraction.name = result.name
-        if result.description:
+        if result['description']:
             extraction.description = result.description
-        if result.image_url:
+        if result['image_url']:
             extraction.image_urls.append(result.image_url)
     else:
         if extraction.wikidata_entry:
@@ -28,7 +29,10 @@ def populate_extraction(extraction):
             extraction.description = extraction.wikidata_entry.description
         query = serp(f"{extraction.name} {extraction.general_category}")
         about_page_link = query['organic_results'][0]['about_page_link']
-        driver = webdriver.Firefox()
+        options = webdriver.FirefoxOptions()
+        options.binary_location = r"/Applications/Firefox Developer Edition.app/Contents/MacOS/firefox"
+        driver = webdriver.Firefox(executable_path=r'/usr/local/Cellar/geckodriver/0.31.0/bin/geckodriver',
+                                   options=options)
         driver.get(about_page_link)
         extraction.description = driver.find_element(by=By.CSS_SELECTOR, value='[jsdata=deferred-i7] > div > div') \
                                      .text.rsplit('.', 1)[0] + '.'
@@ -85,7 +89,7 @@ class ExtractionList:
     def from_duped_results(cls, duped_results):
         d = {}
         for duped_result in duped_results:
-            key = glom(duped_result, 'metadata.mid', default=duped_results['name'].lower())
+            key = glom(duped_result, 'metadata.mid', default=duped_result['name'].lower())
             if key not in d:
                 d[key] = duped_result
             else:
@@ -94,7 +98,7 @@ class ExtractionList:
         extractions = []
         for extraction in d.values():
             extractions.append(Extraction.from_dict(extraction))
-        return cls(list(d.values()))
+        return cls(extractions)
 
 
 class Comment:
@@ -106,6 +110,9 @@ class Comment:
     @classmethod
     def from_dict(cls, d):
         return cls(d["text"], int(d["score"]), d["url"])
+
+    def to_dict(self):
+        return comment_to_dict(self)
 
     def __str__(self):
         return self.name

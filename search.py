@@ -1,7 +1,9 @@
 import os
 
 # the hide api key bs
+import httplib2
 from dotenv import load_dotenv
+from glom import glom
 from googleapiclient.discovery import build
 
 load_dotenv(".env")
@@ -31,5 +33,6 @@ def return_links(search_string):
 
 
 def return_top_result(search_string):
-    result = resource.list(q=search_string, cx=cx_key).execute()
-    return result["link"][0]  # link is exact url
+    # http = google_auth_httplib2.AuthorizedHttp(credentials, http=httplib2.Http())
+    result = resource.list(q=search_string, cx=cx_key).execute(http=httplib2.Http())
+    return glom(result, 'items.0.link', default=None)  # link is exact url

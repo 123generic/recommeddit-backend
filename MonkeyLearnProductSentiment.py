@@ -1,22 +1,19 @@
 # hide api
 import asyncio
-import itertools
 import os
+import pickle
 import time
 from collections import defaultdict
 from math import floor
-from multiprocessing import Pool
 
 from dotenv import load_dotenv
 from functional import seq
 from monkeylearn import MonkeyLearn
-from pebble import ProcessPool
 
-import cross_reference
 import dedupe
 import wikidup
 from comment import ExtractionList, populate_extraction
-from gcloud_ner import analyze_entity_sentiment
+from gsearch import with_serp
 
 load_dotenv(".env")
 api_key = os.getenv("URL_SCRAPE_API_KEY")
@@ -168,33 +165,39 @@ def keyword_extractor_chunked(chunked_comments, query):
         if num_results >= 15 or (iters >= 20 and num_results >= 10) or \
                 (iters >= 30 and num_results >= 5) or iters >= 40:
             break
-        if cross_reference.with_serp(f"{result[0]} {category}")[0]:
+        if with_serp(f"{result[0]} {category}")[0]:
             cross_referenced_results.append(result)
     return cross_referenced_results
 
 
 def recommendation_extractor_chunked(comment_list, query):
     category = query.split(' ', 1)[1]
-    general_category = category[-1]
+    general_category = category.split()[-1]
 
     def add_category(extraction):
         extraction.category = category
         extraction.general_category = general_category
         return extraction
 
-    async def get_extractions(comments):
-        extraction_coroutines = []
-        for comment in comments:
-            extraction_coroutines.append(asyncio.to_thread(analyze_entity_sentiment, comment))
-        results = await asyncio.gather(*extraction_coroutines)
-        return results
+    def do(func, data):
+        async def run():
+            coroutines = []
+            for el in data:
+                coroutines.append(asyncio.to_thread(func, el))
+            return await asyncio.gather(*coroutines)
 
-    data = comment_list.to_list()
-    results = asyncio.run(get_extractions(data))
+        return asyncio.run(run())
 
-    results = list(itertools.chain(*results))  # flatten
+    # data = comment_list.to_list()[:600]
+    # results = do(analyze_entity_sentiment, data)
 
-    extractions = ExtractionList.from_duped_results(results).extractions.sort(key=lambda x: x.score, reverse=True)
+    # results = list(itertools.chain(*results))  # flatten
+
+    with open('results.pkl', 'rb') as file:
+        results = pickle.load(file)
+
+    extractions = ExtractionList.from_duped_results(results).extractions
+    extractions.sort(key=lambda x: x.score, reverse=True)
     extractions = seq(extractions).map(add_category).to_list()
 
     additional = 0
@@ -207,19 +210,20 @@ def recommendation_extractor_chunked(comment_list, query):
 
     unvalidated_extractions = seq(extractions).filter(lambda x: not x.mid).to_list()
 
-    deduped = dedupe.dedupe(seq(unvalidated_extractions).map(lambda extraction: extraction.name).to_list())
-    deduped_results = seq(unvalidated_extractions).filter(lambda extraction: extraction.name in deduped).to_list()
+    with open('deduped_results.pkl', 'rb') as file:
+        deduped_results = pickle.load(file)
+
+    # deduped = dedupe.dedupe(seq(unvalidated_extractions).map(lambda extraction: extraction.name).to_list())
+    # deduped_results = seq(unvalidated_extractions).filter(lambda extraction: extraction.name in deduped).to_list()
 
     seen_wikidata_ids = {}
 
     cross_referenced_results = []
 
-    pool = ProcessPool()
     while len(cross_referenced_results) < additional or not deduped_results:
         wiki_duped_extractions = []
         to_validate = deduped_results[:floor(additional * 1.5)]
-        wiki_results = pool.map(wikidup.get_wikidata, to_validate, timeout=10)
-        pool.join()
+        wiki_results = do(wikidup.get_wikidata, [extraction.name for extraction in to_validate])
         for i, (wiki_result, extraction) in enumerate(zip(wiki_results, to_validate)):
             if wiki_result:
                 if wiki_result.id not in seen_wikidata_ids:
@@ -228,22 +232,15 @@ def recommendation_extractor_chunked(comment_list, query):
                     wiki_duped_extractions.append(extraction)
             else:
                 wiki_duped_extractions.append(extraction)
-        cross_results = pool.map(cross_reference.with_serp,
-                                 [f"{extraction.name} {category}" for extraction in wiki_duped_extractions],
-                                 timeout=10)
-        pool.join()
+        cross_results = do(with_serp, [f"{extraction.name} {category}" for extraction in wiki_duped_extractions])
         for extraction, (is_valid, success_url) in zip(wiki_duped_extractions, cross_results):
             if is_valid:
                 extraction.cross_referenced_url = success_url
                 cross_referenced_results.append(extraction)
-    pool.close()
 
     validated_top_extractions.extend(cross_referenced_results)
 
-    pool = Pool(processes=len(validated_top_extractions))
-    pool.map(populate_extraction, validated_top_extractions)
-    pool.close()
-    pool.join()
+    do(populate_extraction, validated_top_extractions)
 
     return validated_top_extractions
 

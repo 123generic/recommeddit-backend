@@ -84,6 +84,7 @@ def analyze_entity_sentiment(comment):
     # the language specified in the request or, if not specified,
     # the automatically-detected language.
     print(u"Language of the text: {}".format(response.language))
+    return results
 
 #
 # if __name__ == "__main__":
