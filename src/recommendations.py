@@ -7,10 +7,10 @@ from cross_reference import gkg_query
 from images import get_images
 
 # Loading spacy pipeline
-# spacy.require_gpu(gpu_id=0)
-# NLP = spacy.load('roberta-model-best')
+spacy.require_gpu(gpu_id=0)
+NLP = spacy.load('roberta-model-best')
 nouns_nlp = spacy.load('en_core_web_lg', disable=['parser','ner','lemmatizer'])
-NLP = spacy.load('tok2vec')
+# NLP = spacy.load('tok2vec')
 NLP.add_pipe('sentencizer')
 
 def get_recommendations(query):
