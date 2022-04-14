@@ -15,7 +15,7 @@ def adjust_upvotes(upvotes):
         score = 100 + (upvotes - 100)*0.25
     elif upvotes > 1000 and upvotes <= 10000:
         score = 100 + (900*0.25) + (upvotes - 1000)*0.1
-    else:
+    elif upvotes > 10000:
         score = 100 + (900*0.25) + (9000*0.1) + (upvotes - 10000)*0.01
     return round(score)
 

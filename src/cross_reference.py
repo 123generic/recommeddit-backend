@@ -147,10 +147,10 @@ if __name__ == '__main__':
         'query': query_string,
         'limit': 10,
         'indent': True,
-        'key': google_knowledge_graph_api_key
+        'key': 'AIzaSyBu4owh_hXnuq0r2foWM224On0Tt-2Pg3w'
     }
 
     # query KG
     url = 'https://kgsearch.googleapis.com/v1/entities:search' + '?' + urllib.parse.urlencode(params)
     r = requests.get(url)
-    print(r.headers)
+    print(r, r.text, r.headers)
