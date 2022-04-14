@@ -26,10 +26,11 @@ params = {
 # based off a list of recommendations and keywords extracted from query
 def get_images(name, category, rec):
     params["q"] = name + " " + category
-    search = GoogleSearch(params)
-    results = search.get_dict()
+    r = requests.get('https://serpapi.com/search.json?', params=params)
+    results = r.json()
     images_results = results['images_results']
-    return [img['original'] for img in images_results[:5]], rec
+    rec.images = [img['original'] for img in images_results[:5]]
+    return rec
 
 # def get_links(query, nouns, rec):
 #     # http = google_auth_httplib2.AuthorizedHttp(credentials, http=httplib2.Http())

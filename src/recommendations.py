@@ -7,10 +7,10 @@ from cross_reference import gkg_query
 from images import get_images
 
 # Loading spacy pipeline
-spacy.require_gpu(gpu_id=0)
-NLP = spacy.load('roberta-model-best')
+# spacy.require_gpu(gpu_id=0)
+# NLP = spacy.load('roberta-model-best')
 nouns_nlp = spacy.load('en_core_web_lg', disable=['parser','ner','lemmatizer'])
-# NLP = spacy.load('tok2vec')
+NLP = spacy.load('tok2vec')
 NLP.add_pipe('sentencizer')
 
 def get_recommendations(query):
@@ -63,14 +63,20 @@ def get_recommendations(query):
     # Return in dict format
     return sorted([r.to_dict() for r in recommendations], key=lambda x: x['score'], reverse=True)
 
+# def _get_images_and_links(recs, user_query_nouns):
+#     recs_results = []
+#     with concurrent.futures.ThreadPoolExecutor(max_workers=len(recs)) as exec:
+#         imgs = [exec.submit(get_images, r.entity, user_query_nouns, r) for r in recs]
+#         for x in imgs:
+#             rec = x.result()
+#             recs_results.append(rec)
+#     return recs_results
+
 def _get_images_and_links(recs, user_query_nouns):
     recs_results = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(recs) * 2) as exec:
-        imgs = [exec.submit(get_images, r.entity, user_query_nouns, r) for r in recs]
-        for x in imgs:
-            imgs, rec = x.result()
-            rec.images = imgs
-            recs_results.append(rec)
+    for r in recs:
+        rec = get_images(r.entity, user_query_nouns, r)
+        recs_results.append(rec)
     return recs_results
 
 def _get_entities(comments):
