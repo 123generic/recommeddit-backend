@@ -78,7 +78,7 @@ def clean_string(s):
     return s
 
 
-def gkg_query(query_string, threshold=1, print_results=False):
+def gkg_query(query_string, rec, threshold=0, print_results=False):
     """
     Use Google's Knowledge Graph Search API call and analyze the results to check
     if the output is reasonable for our search query
@@ -125,10 +125,11 @@ def gkg_query(query_string, threshold=1, print_results=False):
             if print_results:
                 print(f"Query of `{query_string}` found TRUE by the following search result:")
                 print(result)
+            rec.description = result['result']['detailedDescription']
             return True
     return False
 
-    
+
 if __name__ == '__main__':
     query_string = 'vs code ide'
     print('Query:', query_string)

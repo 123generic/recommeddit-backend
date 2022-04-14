@@ -8,14 +8,16 @@ def average(lst):
     return sum(lst)/len(lst)
 
 def adjust_upvotes(upvotes):
+    score = 0
     if upvotes > 0 and upvotes <= 100:
         score = upvotes
     elif upvotes > 100 and upvotes <= 1000:
         score = 100 + (upvotes - 100)*0.25
     elif upvotes > 1000 and upvotes <= 10000:
         score = 100 + (900*0.25) + (upvotes - 1000)*0.1
-    score = 100 + (900*0.25) + (9000*0.1) + (upvotes - 10000)*0.01
-    return score
+    else:
+        score = 100 + (900*0.25) + (9000*0.1) + (upvotes - 10000)*0.01
+    return round(score)
 
 def get_sentiment_scores(sentences):
     avg_sentiments = {}

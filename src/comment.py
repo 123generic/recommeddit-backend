@@ -81,7 +81,7 @@ class Recommendation:
     """
     Class to contain a recommendation. Holds an entity and references to many commments
     """
-    def __init__(self, entity, wiki_name, wiki_cat, images, score, link, comments):
+    def __init__(self, entity, wiki_name, wiki_cat, images, score, link, comments, description=None):
         self.entity = entity
         self.wiki_name = wiki_name
         self.wiki_cat = wiki_cat
@@ -89,6 +89,7 @@ class Recommendation:
         self.score = score
         self.link = link
         self.comments = comments
+        self.description = description
 
     def to_dict(self):
         return {
@@ -96,5 +97,6 @@ class Recommendation:
                 'images':self.images,
                 'score':round(self.score, 1),
                 'link':self.link,
+                'description':self.description,
                 'comments':[x.to_dict() for x in self.comments]
             }

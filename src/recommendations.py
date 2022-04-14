@@ -4,13 +4,13 @@ from scoring import calc_points
 from scraper import scrape_reddit_links_from_google_query, scrape_json_from_reddit_links
 from Wikidup import top_wikidata, matching
 from cross_reference import gkg_query
-from images import get_images_and_links
+from images import get_images, get_links
 
 # Loading spacy pipeline
-spacy.require_gpu(gpu_id=0)
-NLP = spacy.load('roberta-model-best')
+# spacy.require_gpu(gpu_id=0)
+# NLP = spacy.load('roberta-model-best')
 nouns_nlp = spacy.load('en_core_web_lg', disable=['parser','ner','lemmatizer'])
-# NLP = spacy.load('tok2vec')
+NLP = spacy.load('tok2vec')
 NLP.add_pipe('sentencizer')
 
 def get_recommendations(query):
@@ -54,21 +54,26 @@ def get_recommendations(query):
     # From here, put in loop and wait until ten received
     # De-Dupe and Consolidate (obtain wikidata ID and real name)
     # Cross reference remaining
-    recommendations = _de_dupe(ents[:20])
+    recommendations = _de_dupe(ents[:50])
     recommendations = _cross_ref(recommendations, user_query_nouns)[:10]
     
     # Attatch images and link to product
-    # recommendations = _get_images(recommendations)
+    recommendations = _get_images_and_links(recommendations, user_query_nouns)
 
     # Return in dict format
     return sorted([r.to_dict() for r in recommendations], key=lambda x: x['score'], reverse=True)
 
-def _get_images(recs, user_query_nouns):
+def _get_images_and_links(recs, user_query_nouns):
     recs_results = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(recs)) as exec:
-        futures = [exec.submit(get_images_and_links, r.entity + user_query_nouns, r) for r in recs]
-        for x in futures:
-            images, link, rec = x.result()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(recs) * 2) as exec:
+        imgs = [exec.submit(get_images, r.entity, user_query_nouns, r) for r in recs]
+        for x in imgs:
+            imgs, rec = x.result()
+            rec.images = imgs
+        lnks = [exec.submit(get_links, r.entity, user_query_nouns, r) for r in recs]
+        for x in lnks:
+            lnk, rec = x.result()
+            rec.link = lnk
             recs_results.append(rec)
     return recs_results
 
@@ -101,8 +106,8 @@ def _de_dupe(entities):
 
 def _cross_ref(recommendations, user_query_nouns):
     # Cross reference using google knowledge graph
-    def gkg_wrapper(query, rec):
-        return gkg_query(query), rec
+    def gkg_wrapper(query, rec, threshold=0):
+        return gkg_query(query, rec), rec
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(recommendations)) as exec:
         futures = [exec.submit(gkg_wrapper, r.entity + user_query_nouns, r) for r in recommendations]
         results = [x.result() for x in futures]
