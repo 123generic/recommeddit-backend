@@ -125,7 +125,7 @@ def gkg_query(query_string, rec, threshold=0, print_results=False):
             if print_results:
                 print(f"Query of `{query_string}` found TRUE by the following search result:")
                 print(result)
-            rec.description = result['result']['detailedDescription']
+            rec.description = result['result']['detailedDescription']['articleBody']
             return True
     return False
 

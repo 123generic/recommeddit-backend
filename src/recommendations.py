@@ -4,13 +4,13 @@ from scoring import calc_points
 from scraper import scrape_reddit_links_from_google_query, scrape_json_from_reddit_links
 from Wikidup import top_wikidata, matching
 from cross_reference import gkg_query
-from images import get_images, get_links
+from images import get_images
 
 # Loading spacy pipeline
-# spacy.require_gpu(gpu_id=0)
-# NLP = spacy.load('roberta-model-best')
+spacy.require_gpu(gpu_id=0)
+NLP = spacy.load('roberta-model-best')
 nouns_nlp = spacy.load('en_core_web_lg', disable=['parser','ner','lemmatizer'])
-NLP = spacy.load('tok2vec')
+# NLP = spacy.load('tok2vec')
 NLP.add_pipe('sentencizer')
 
 def get_recommendations(query):
@@ -54,7 +54,7 @@ def get_recommendations(query):
     # From here, put in loop and wait until ten received
     # De-Dupe and Consolidate (obtain wikidata ID and real name)
     # Cross reference remaining
-    recommendations = _de_dupe(ents[:50])
+    recommendations = _de_dupe(ents[:20])
     recommendations = _cross_ref(recommendations, user_query_nouns)[:10]
     
     # Attatch images and link to product
@@ -70,10 +70,6 @@ def _get_images_and_links(recs, user_query_nouns):
         for x in imgs:
             imgs, rec = x.result()
             rec.images = imgs
-        lnks = [exec.submit(get_links, r.entity, user_query_nouns, r) for r in recs]
-        for x in lnks:
-            lnk, rec = x.result()
-            rec.link = lnk
             recs_results.append(rec)
     return recs_results
 

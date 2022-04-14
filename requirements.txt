@@ -9,4 +9,5 @@ vaderSentiment>=3.3.2
 numpy>=1.22.3
 spacy>=3.2.4
 fastapi==0.75.1
-uvicorn[standard]==0.17.6
+gunicorn~=20.1.0
+uvicorn~=0.17.6

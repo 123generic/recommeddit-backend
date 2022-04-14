@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import json, sys, requests, recommendations
-import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -59,7 +58,3 @@ def main():
     results = recommendations.get_recommendations(query)
 
     print(results)
-
-
-if __name__ == "__main__":
-    uvicorn.run("mainak:main")
