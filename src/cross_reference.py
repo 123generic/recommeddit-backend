@@ -90,7 +90,7 @@ def gkg_query(query_string, rec, threshold=0, print_results=False):
     """
     params = {
         'query': query_string,
-        'limit': 10,
+        'limit': 1,
         'indent': True,
         'key': google_knowledge_graph_api_key
     }
@@ -101,7 +101,7 @@ def gkg_query(query_string, rec, threshold=0, print_results=False):
         print(url)
     response = requests.get(url)
     if response.status_code != 200:
-        print(response)
+        print(response.text)
         print(response.headers)
         raise Exception('too many requests', response, response.headers)
     response = response.json()
